@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Verifier</title>
+	<link rel="stylesheet" type="text/css" href="static/w3.css">
+	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+	<style type="text/css">
+	#canvas{
+		width:300px;
+		height:600px;
+		}
+		svg{
+			height:100%;
+		}
+		.router i{
+			font-size: 80px;
+		}
+	}
+
+	#option_display_1{
+		width:100%
+	}
+
+	#upleft{
+		height:30%;
+		border-style:solid
+	}
+
+	#downleft{
+	width:50%;
+	height:70%;
+	border-style:solid
+	}
+	#toright{
+		height:100%;
+		border-style:solid
+	}
+
+	</style>
+</head>
+<body>
+<!--
+<div class="w3-cell-row">
+	<div class="w3-cell">
+
+		<div class="w3-card-4">
+			<header class="w3-container w3-red">
+				<h5>Core Nodes</h5>
+			</header>
+			<div class="w3-container">
+				<p id="core-nodes-list"></p>
+			</div>
+		</div>
+
+			<div class="w3-card-4">
+				<header class="w3-container w3-blue">
+					<h5>Tests</h5>
+				</header>
+				<div class="w3-cell-row">
+					<div class="router w3-cell w3-center" id="source" style="float:left">
+						<i class="material-icons w3-container" >router</i>
+						<p class="w3-container w3-center w3-tag w3-blue"></p>
+					</div>
+
+					<div class="w3-cell w3-cell-middle">
+						<div >
+							<span>Flows:</span>
+							<p id="flows" class="w3-cell w3-center"></p> <br>
+						</div>
+						<div>
+							<span>Nodes on path:</span>
+							<p id="shortest_path" class="w3-cell w3-center"></p>
+						</div>
+					</div>
+
+
+					<div class="router w3-cell w3-center" id="destination" style="float:right">
+						<i class="material-icons w3-container " >router</i>
+						<p class="w3-container w3-center w3-blue w3-tag"></p>
+					</div>
+				</div>
+				<div class="w3-container operations">
+					<h5 class="w3-black">Operations</h5>
+					<div class="w3-cell-row">
+						<div class="w3-cell w3-cell-middle">
+							<button class="w3-button w3-blue" onclick="check_reachability()">Test Reachability</button>
+							<div class="w3-cell-row">
+								<input class="w3-input w3-cell w3-third" id="bandwidth" type="text" placeholder="Bandwidth">
+								<button class="w3-button w3-blue w3-cell w3-third" onclick="check_bandwidth()">Test bandwidth</button>
+							</div>
+							<button class="w3-button w3-red" onclick="block()">Block flow</button>
+							<button class="w3-button w3-teal" onclick="unblock()">Unblock flow</button>
+							<p id="result" class="w3-cell w3-tag w3-center"></p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+	</div>
+
+	<div class="w3-cell">
+		<div id="canvas"></div>
+	</div>
+</div>
+-->
+
+	<div class="w3-cell-row">
+
+		<div  style=" border-style:solid; padding:2px"><!--class="w3-cell"-->
+			<div class="navbar w3-card w3-yellow" id="option_display" style=" border-style: solid; height:200px; padding:2px">
+				<div class="w3-card w3-green">
+					<!--<a href id="vendor" href="#vendor">Vendor</a>
+					<a href id="Equipment" href="#equipment">Equipment</a>
+					<a href id="cards" href="#card">Cards</a>
+					-->
+
+					<button id="vendor" href="#vendor">Vendor</button>
+					<select id="vendor_select" name="Vendor">
+						<option></option>
+					</select>
+
+					<button id="equipment" href="#equipment">Equipment</button>
+
+					<select id="equipment_select" name="equipment">
+						<option></option>
+					</select>
+					<button id="Properties" href="#properties">Properties</button>
+					<p id="reference_and_comments" ></p>
+					<!--
+                    <p id="vendor_names">new vendors</p>
+
+					<p id="equipment_names">new equipments</p>
+					-->
+				</div>
+				<!--
+			</div>
+
+				<div class="w3-card-4">
+					<header class="w3-container w3-red">
+						<h5>Core Nodes</h5>
+					</header>
+					<div class="w3-container">
+						<p id="core-nodes-list"></p>
+					</div>
+				</div>
+
+
+				<div class="w3-card-4">
+					<header class="w3-container w3-blue">
+						<h5>Tests</h5>
+					</header>
+					<div class="w3-cell-row">
+							<div class="router w3-cell w3-center" id="source" style="float:left">
+								<i class="material-icons w3-container" >router</i>
+								<p class="w3-container w3-center w3-tag w3-blue"></p>
+							</div>
+
+
+							<div class="w3-cell w3-cell-middle">
+								<div >
+									<span>Flows:</span>
+									<p id="flows" class="w3-cell w3-center"></p> <br>
+								</div>
+								<div>
+									<span>Nodes on path:</span>
+									<p id="shortest_path" class="w3-cell w3-center"></p>
+								</div>
+							</div>
+
+
+							<div class="router w3-cell w3-center" id="destination" style="float:right">
+								<i class="material-icons w3-container " >router</i>
+								<p class="w3-container w3-center w3-blue w3-tag"></p>
+							</div>
+					</div>
+					<div class="w3-container operations">
+						<h5 class="w3-black">Operations</h5>
+						<div class="w3-cell-row">
+							<div class="w3-cell w3-cell-middle">
+									<button class="w3-button w3-blue" onclick="check_reachability()">Test Reachability</button>
+									<div class="w3-cell-row">
+										<input class="w3-input w3-cell w3-third" id="bandwidth" type="text" placeholder="Bandwidth">
+										<button class="w3-button w3-blue w3-cell w3-third" onclick="check_bandwidth()">Test bandwidth</button>
+									</div>
+									<button class="w3-button w3-red" onclick="block()">Block flow</button>
+									<button class="w3-button w3-teal" onclick="unblock()">Unblock flow</button>
+									<p id="result" class="w3-cell w3-tag w3-center"></p>
+								</div>
+						</div>
+					</div>
+					-->
+				</div>
+
+
+		</div>
+
+		<div class="w3-container w3-cell" id="canvas" style='width:50%;  border-style: solid; padding: 2px'></div>
+	</div>
+
+
+	<!-- new added code--
+
+	<div id="dropdownmenu">
+		<button></button>
+
+	</div>
+
+
+
+	<!- end here -->
+
+	<script type="text/javascript" src="static/jquery-3.3.1.min.js"></script>
+	<script type="text/javascript" src="static/d3.v3.min.js"></script>
+	<script type="text/javascript" src="static/jsnetworkx.js"></script>
+	<script type="text/javascript">
+	/*
+		function setWindowHeight(){
+			var windowHeight = window.innerHeight;
+			var windowWidth = window.innerWidth;
+
+			document.getElementById('canvas').style.height = windowHeight + "px";
+			// document.getElementById('canvas').style.width = windowWidth/2 + "px";
+			// document.getElementById('controls').style.width = windowWidth/2 + "px";
+			// document.getElementsByTagName('svg').style.height = windowHeight + "px";
+			// document.getElementsByTagName('svg').style.width = windowWidth/2 + "px";
+
+		}
+	*/
+	/*	var G = new jsnx.Graph();
+		// G.addNode(9,{color: '#008A00'})
+		var core_nodes_list = {{core_nodes_list}}
+		var edges = {{edges}}
+		for (var i in core_nodes_list) {
+			$('#core-nodes-list').append('<span>'+core_nodes_list[i]+ (i==core_nodes_list.length-1 ? '' : ',') + ' </span>')
+			G.addNode(core_nodes_list[i], {color: '#ff0000'})
+		}
+
+		G.addEdgesFrom(edges);
+
+		jsnx.draw(G, {
+			element: '#canvas', 
+			withLabels: true, 
+			nodeStyle: {
+				fill: function(d) { 
+					return d.data.color; 
+				}
+			}, 
+			labelStyle: {fill: 'white'},
+			stickyDrag: false,
+			nodeAttr: {
+				r: 12,
+				title: function(d) { return d.node;},
+				id: function(d) {
+		            return 'node-' + d.node; // assign unique ID
+		        },
+		        selected: false
+    		}
+		});
+	*/
+	/*
+// helper method to find and style SVG node elements
+function highlightNode(node, on, color) {
+	color = color || '#0000ff';
+	d3.select('#node-' + node).style('fill', function(d) {
+		return on ? color : d.data.color;
+	});
+}
+
+
+// plural version of above function
+function highlightNodes(nodes, on, color) {
+	for (var i = 0; i<nodes.length;i++){
+		highlightNode(nodes[i], on, color);
+	}
+}
+
+	*/
+	/*
+// bind event handlers
+// dx
+function buttonDisabler(){
+	if(selectedFlow=="" || selectedBox=="")
+		$('.operations button').attr('disabled', 'disabled');
+	else
+		$('.operations button').removeAttr('disabled');
+}
+
+
+*/
+/*
+var node_mouse_move=d3.selectAll('.node');
+
+var mouse_over = node_mouse_move.on('mouseover',function(d){
+d3.select(this).attr({fill:'orange'})
+//.enter()
+//.append("circle");
+});
+//
+//var select_vendor_name = mouse_over
+//.enter()
+//.append("circle")
+//.attr({fill,'yellow'});});
+//.append("svg")
+//
+//.attr("height",50);
+//.append("p")
+//.text("node ")
+/*.text(function(){
+$.get('/vendor_names',function(data)
+{
+return data;
+});*
+});*/
+//})
+
+var mouse_out=node_mouse_move.on('mouseout',function(d){
+d3.select(this).attr({fill:function(e){
+return e.color;}})
+})
+.on('click', function(d) {
+	if(selectedNodes.indexOf(d.node)>=0){ //already selected
+		selectedNodes.splice(selectedNodes.indexOf(d.node),1);
+		highlightNode(d.node, false);
+
+	}
+	else if(selectedNodes.length==2){
+		var popped=selectedNodes.pop();
+		
+		highlightNode(popped,false);
+		selectedNodes.push(d.node);
+		highlightNode(d.node,true);
+	}
+	else if(selectedNodes.length==1){
+		selectedNodes.push(d.node);
+		function_for_option_display(d.node);
+		highlightNode(d.node,true);
+
+
+	}
+	else if (selectedNodes.length ==0){
+		selectedNodes.push(d.node);
+		highlightNode(d.node,true);
+	}
+	console.log(selectedNodes)
+
+	if(selectedNodes.length==2){ //2 nodes selected. get flows
+		selectedBox="";
+		selectedFlow="";
+		$.get("/flows/"+selectedNodes[0]+"/"+selectedNodes[1], function(data, status){
+			console.log(data)
+			flows = data;
+	        $('#flows').empty();
+	        for (var flow=0;flow< data.length;flow++){
+	        	if(flow !=0){
+	        		
+	        		$('#flows').append("<button class='w3-button w3-green'>"+data[flow]+"</button>");
+	        		$('#flows button').on('click', function(){
+						console.log(this)
+						$('#flows button').removeClass('w3-teal');
+						$(this).addClass('w3-teal');
+						selectedFlow = flows.indexOf(parseInt($(this).text()));
+						console.log(selectedFlow)
+						buttonDisabler();
+
+					})
+	        	}
+	        }
+	    });//.on("mouseover")
+	    //, function(){
+	      //    d3.select(this).attr({
+            //  fill: "orange"
+           // })
+	    //document.body.style.backgroundColor = "red";})
+	    //.on("mouseout");//, mouseouthandler);
+	    $.get("/shortest_path/"+selectedNodes[0]+"/"+selectedNodes[1], function(data, status){
+			console.log(data)
+			highlightNodes(shortestPath, false, null); //reset previously selected shortest path
+			shortestPath = data;
+			shortestPath.splice(0,1);
+			shortestPath.splice(-1,1);
+			highlightNodes(shortestPath, true, "#00ff00"); //highlist shorted path
+
+			//create buttons for choosing box
+			$('#shortest_path').empty();
+	        for (var box=0;box< shortestPath.length;box++){
+	        		$('#shortest_path').append("<button class='w3-button w3-round-large w3-green'>"+shortestPath[box]+"</button>");
+	        		$('#shortest_path button').on('click', function(){
+						console.log(this)
+						$('#shortest_path button').removeClass('w3-teal');
+						$(this).addClass('w3-teal');
+						selectedBox = shortestPath.indexOf(parseInt($(this).text()))+2;
+						console.log(selectedBox)
+						buttonDisabler();
+
+					})
+	        }
+	    });
+	}
+	$('#source p').text(selectedNodes[0] || "")
+	$('#destination p').text(selectedNodes[1] || "")
+	// d.data.selected = !d.data.selected;
+});
+
+/*
+function function_for_equipment_display()
+{
+url='equipment_per_vendor';
+$.get(url.function(data)
+{
+function_for_equipment_display(url);
+alert(data);
+});
+*/
+
+
+function function_for_equipment_display(url,node_name,vendor_name)
+{
+//$('#reference_and_comments').html(null).text("printing the data");
+$.get(url,function(data){
+	console.log(data);
+	for(var equipment_name=0;equipment_name<data.length;equipment_name++)
+	{
+	//$('#equipment_names').append(data[equipment_name]);
+		var option = document.createElement("option");
+		option.text = data[equipment_name];
+		//option.id = data[equipment_name];
+		//option.name = data[equipment_name];
+		option.value = data[equipment_name];
+		var select = document.getElementById("equipment_select");
+		select.appendChild(option);
+	}
+});
+}
+
+
+function function_for_equipment_select(node_name,vendor_name)
+{
+url='/equipment_select';
+//alert("equipment");
+/*
+$.get(url,function(data){
+	console.log(data);
+	for(var equipment_name=0;equipment_name<data.length;equipment_name++)
+	{
+	//$('#equipment_names').append(data[equipment_name]);
+		var option = document.createElement("option");
+		option.text = data[equipment_name];
+		//option.id = data[equipment_name];
+		//option.name = data[equipment_name];
+		option.value = data[equipment_name];
+		var select = document.getElementById("equipment_select");
+		select.appendChild(option);
+	}
+});
+*/
+function_for_equipment_display(url,node_name,vendor_name);
+d3.select("#equipment_select").on('click',function(){
+d3.selectAll("option").on('click',function(d)
+{
+//alert("equipment selected");
+
+var x = document.getElementById("equipment_select").selectedIndex;
+var y = document.getElementById("equipment_select").options;
+//alert("Index: " + y[x].index + " is " + y[x].text);
+var equipment_name=y[x].text;
+//alert("equipment selected");
+
+var url = "/equipment_name_response";
+var inf = {'equipment_name': equipment_name,'node_name':node_name,'vendor_name':vendor_name};
+$.post(url,{'data':JSON.stringify(inf)},function(data)//'data':inf},function(data)
+{
+    alert("property of equipment loading");
+	for(property in data)
+	{
+	console.log(data[property]);
+	$('#reference_and_comments').append(data[property]);
+	}
+});
+});
+//alert(equipment_name);
+///////////////////////////////////////////////////////////////////////////////////////////
+});
+}
+
+
+function function_for_option_display(node_name)
+{
+$('#reference_and_comments').html(null);//.text("printing the data");
+url='/vendor_names';
+$.get(url,function(data)
+	{
+	console.log(data);
+	for( var vendor_name = 0; vendor_name<data.length;vendor_name++)
+		{
+		//$('#vendor_names').append(data[vendor_name]);
+		var option = document.createElement("option");
+		option.text = data[vendor_name];
+		//option.id = data[vendor_name];
+		//option.name = data[vendor_name];
+		option.value = data[vendor_name];
+		var select = document.getElementById("vendor_select");
+		select.appendChild(option);
+		}
+	}
+);
+
+d3.select("#vendor_select").on('click',function(){
+d3.selectAll('option').on('click',function(){
+$('#reference_and_comments').text("");
+$('#equipment_select').find('option').remove();//val("");
+var x = document.getElementById("vendor_select").selectedIndex;
+var y = document.getElementById("vendor_select").options;
+//alert("Index: " + y[x].index + " is " + y[x].text);
+var vendor_name=y[x].text;
+
+/*
+$.ajax({
+    method: 'POST',
+    url: "/vendor_name_response",
+    data: {'vendor_name': vendor_name},//document.getElementById('vendor_name').value},
+    success: function(response) {
+    	console.log(response)
+    },
+    error: function(response) {
+        console.error(response)
+        }
+});
+*/
+
+
+
+var url = "/vendor_name_response";
+$.post(url,{'vendor_name': vendor_name});
+//alert(vendor_name);
+function_for_equipment_select(node_name,vendor_name);
+}
+);
+});
+//console.log(vendor_name_value);
+/*d3.selectAll('option').on('click',function(){
+var sel = document.getElementById('vendor_select');
+//var opt=sel.options[sel.selectedIndex];
+for(var i=0,len=opt.sel.options.length;i<len;i++)
+	{
+	opt=sel.options[i];
+	if(opt.selected==True)
+	{
+	break;
+	}
+	}
+//alert("alert on options");});
+//console.log(opt.value);
+*
+d3.selectAll('option').on('click',function()
+		{
+		//var vendor_name_value = d3.select("#vendor_select").node().value;
+		//alert("something");
+		//console.log(vendor_name_value);
+//console.log("log");
+//console.log(d3.select(this).text);
+//var vendor_name_selected=d3.select(this).attr('name');
+//alert(vendor_name_selected);
+//alert("option selected");
+//function_for_equipment_display()
+//var option_value = d3.select(this).
+		}
+	);
+*/
+//var option_string='<option value="'+data[vendor_name]+'>' + data[vendor_name] + '</option>';
+//$('#vendor_select').append(option_string);
+}
+
+
+/*
+function mouseoverhandler(d, i) {  // Add interactivity
+
+            // Use D3 to select element, change color and size
+            d3.select(this).attr({
+              fill: "orange",
+              r: radius * 2
+            });
+            */
+function check_reachability(){
+	$.get("/check/reachability/"+selectedNodes[0]+"/"+selectedNodes[1]+"/"+selectedFlow, function(data, status){
+		console.log(data)
+        $('#result').text(data);
+    });
+}
+
+
+function check_bandwidth(){
+	var bandwidth = $('#bandwidth').val();
+	var url = "/check/bandwidth/"+selectedNodes[0]+"/"+selectedNodes[1]+"/"+bandwidth
+	console.log(url)
+	$.get(url, function(data, status){
+        console.log(data);
+        $('#result').text(data)
+    });
+}
+
+
+
+function block(){
+	var url = "/block/"+selectedNodes[0]+"/"+selectedNodes[1]+"/"+selectedFlow+"/"+selectedBox;
+	$.get(url, function(data, status){
+        console.log(data);
+        $('#result').text(data)
+    });	
+}
+
+
+function unblock(){
+	var url = "/unblock/"+selectedNodes[0]+"/"+selectedNodes[1]+"/"+selectedFlow+"/"+selectedBox;
+	$.get(url, function(data, status){
+        console.log(data);
+        $('#result').text(data)
+    });	
+}
+
+/*
+function my_func(d.node)
+{
+print("hello there");
+return;
+}
+
+function my_new_func(){
+var url="/vendor_instance";
+$.get(url,function(data){
+	console.log(data);
+	$('#result').text(data)
+	}
+	*
+}*/
+
+
+
+
+var selectedNodes = [];
+var shortestPath = [];
+var flows = [];
+var selectedFlow = "", selectedBox="";
+
+setWindowHeight();
+buttonDisabler();
+*/
+
+</script>
+</body>
+</html>
