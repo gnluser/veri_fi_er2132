@@ -49,23 +49,22 @@ from math import *
 #from network_equipment import *
 
 
-general_node_type={"Switch":{"color":"steelblue1","radius":"12","name":"sw","distance":0},\
+general_node_type={"Switch":{"color":"steelblue1","radius":"12","name":"Sw","distance":0},\
                    "Router":{"color":"steelblue2","radius":"13","name":"R","distance":0},\
                    "Gateway":{"color":"skyblue1","radius":"14","name":"G","distance":0},\
     "Firewall":{"color":"skyblue2","radius":"14","name":"F","distance":0},\
-                   "Data_Center_InterConnect":{"color":"skyblue3","radius":"14","name":"Dci","distance":0}}
+                   "DataCenter_InterConnect":{"color":"skyblue3","radius":"14","name":"Dci","distance":0}}
 network_node_type={
            "Provider Node":{"color":"pink","radius":"14","name":"P","distance":170},\
            "Core Node":{"color":"blue","radius":"14","name":"CN","distance":0},\
            "Metro Node":{"color":"brown","radius":"13","name":"M","distance":100},\
            "Access Node":{"color":"orange","radius":"12","name":"Acc","distance":350}, \
-    "Aggregation Node": {"color": "lightgreen", "radius": "12", "name": "Ag", "distance": 0}}
+    "Aggregation_Node": {"color": "lightgreen", "radius": "12", "name": "Ag", "distance": 0}}
 
-data_center_node_type={"Aggregation_DC_Node":{"color":"coral","radius":"13","name":"Ag","distance":290,},\
+data_center_node_type={"Aggregation_DC_Node":{"color":"coral","radius":"13","name":"Agdc","distance":290,},\
            "Edge DC Node":{"color":"orangered","radius":"13","name":"Edg","distance":250},\
-           "Core DC Node":{"color":"cyan","radius":"14","name":"CD","distance":200},\
-                       "Aggregation Node":{"color":"lightgreen","radius":"12","name":"Agdg","distance":0}
-                       }
+           "Core DC Node":{"color":"cyan","radius":"14","name":"CD","distance":200}}
+
 sdn_node_type={"White Box":{"color":"white","radius":"12","name":"WB","distance":0},\
            "Controller":{"color":"lightblue","length":"50","breadth":"20","name":"Cntrlr","distance":0}}
 client_server_node_type={"Server":{"color":"salmon","radius":"10","name":"S","distance":300},\
@@ -103,10 +102,22 @@ class IP_Domain():
         self.ip_domain_range=""
         self.ip_addresses_for_hosts=[]
         self.ip_address_host_map={}
-        #self.create_ip_host_range()
+        #self.create_ip_host_range(ip_address_of_network,number_of_hosts)
 
-    def create_ip_host_range(self):
-        pass
+    def create_ip_host_range(self,ip_address_of_network,number_of_hosts):
+        host_bits=int(log(number_of_hosts,2))+1
+        add_to_host_bits = "".join([str(1)for bits in range(host_bits)])
+        #for bits in host_bits:
+        #    add_to_host_bits += str(1)
+        #add_to_host_bits=
+        for ip_no in range(pow(2,host_bits)):
+            ip_addr=Ip_Address()
+            ip_addr.subnet_mask=(ip_address_of_network.subnet_mask.split('1',1)[0]+add_to_host_bits).ljust(32,'0')
+            #ip_addr.host_id=
+            #+str(int(ip_no,2))
+            ip_addr.ip_address=((ip_address_of_network.ip_address and ip_address_of_network.subnet_mask)+bin(ip_no)[2:]).ljust(32,"0")
+            ip_address_of_network.subnet_domain_pool.append(ip_addr)
+
 
 
 
@@ -114,10 +125,13 @@ class IP_Domain():
 class Ip_Address():
     def __init__(self):
         self.type=""
+        self.ip_address=""
         self.host_id=""
-        self.subnet_mask_id=""
+        self.subnet_mask=""
         self.gateway_id=""
         self.domain_id=""
+        self.subnet_domain_pool=[]
+        self.subnet_distributed_addresses=[]
 
 
 
@@ -155,14 +169,16 @@ class MAC_Address():
                 #b1=b2=""
                 b1=bin(random.randint(0,15))[2:]
                 b2=bin(random.randint(0,15))[2:]
-                string=""
-                for i in range(4-len(b1)):
-                    string+=str(0)
-                b1+=string
-                string = ""
-                for i in range(4 - len(b2)):
-                    string += str(0)
-                b2+=string
+                b1=b1.ljust(4,"0")
+                b2=b2.ljust(4,"0")
+                #string=""
+                #for i in range(4-len(b1)):
+                #    string+=str(0)
+                #b1+=string
+                #string = ""
+                #for i in range(4 - len(b2)):
+                #    string += str(0)
+                #b2+=string
                 slot=b1+b2#+":"
                 address += slot
 
@@ -375,11 +391,6 @@ class Load_Network_Information():
             self.topology.node_numbers += 1
             node.canvas_coords = coords
             #Edge_DC_Node
-        elif name=="Ag":
-            node=Aggregation_Node(self.topology.node_numbers,0,0)
-            self.topology.node_numbers += 1
-            node.canvas_coords = coords
-            #Aggregation_DC_Node
         elif name=="Prb":
             node=Probe(self.topology.node_numbers)
 
@@ -604,25 +615,32 @@ class Node():
         pass
 
 
+
 class Switch(Node):
     def __init__(self,node_id):
         Node.__init__(self,node_id)
+        self.type="Switch"
 
 class Router(Node):
     def __init__(self,node_id):
         Node.__init__(self,node_id)
+        self.type="Router"
 
 class Firewall(Node):
     def __init__(self,node_id):
         Node.__init__(self,node_id)
+        self.type="Firewall"
 
 class Gateway(Node):
     def __init__(self,node_id):
         Node.__init__(self,node_id)
+        self.type="Gateway"
 
 class DataCenter_Interconnect(Node):
     def __init__(self,node_id):
         Node.__init__(self,node_id)
+        self.type=DataCenter_Interconnect
+
 
 class Network_Node(Node):
     def __init__(self,node_id,ports):
@@ -630,7 +648,6 @@ class Network_Node(Node):
         #self.node_id=node_id
         Node.__init__(self,node_id)
         self.port_dictionary={}
-
         self.direction=0
         #self.canvas_coords=""
         #self.latitude=""
@@ -675,6 +692,7 @@ class Core(Network_Node):
 class Aggregation_Node(Network_Node):
     def __init__(self,node):
         Network_Node.__init__(self,node,ports=3)
+        self.type="Aggregation_Node"
 
 class P_Node(Network_Node):
     def __init__(self,node_id,number_of_ports):
@@ -769,7 +787,9 @@ class DC_Node(Node):
 
 class Aggregation_DC_Node(DC_Node):
     def __init__(self,node_id):
-        DC_Node.__init__(self,node_id)
+        DC_Node.__init__(self,node_id,number_of_ports=0)
+        self.type="Aggregation_DC_Node"
+
 class Server(Node):
     def __init__(self,server_id):
         #self.node_id=server_id
@@ -842,22 +862,6 @@ class Edge_Node(DC_Node):
 
 
 
-class Aggregation_Node(DC_Node):
-    def __init__(self,pod_id,node_name,fat_tree_k_index):
-        #number_of_ports = int(fat_tree_k_index / 2)
-        DC_Node.__init__(self,node_name, int(fat_tree_k_index / 2))
-        self.type="Aggregation_DC_Node"
-        self.pod_id=pod_id
-        #self.node_id=node
-        #self.number_of_ports=int(fat_tree_k_index/2)
-        #self.south_ports_dictionary={}
-        #self.north_ports_dictionary={}
-        #self.north_port={}
-        #self.south_port={}
-        #self.pod_id=pod_id
-        #self.ports_dictionary={}
-        self.create_ports()
-        self.distance=220
 
 
 class Client_Node(Node):
@@ -1195,11 +1199,12 @@ class Network_Frame():
             self.topology.node_numbers += 1
             self.canvas_coords = coords
             #Edge_DC_Node
+
         elif name=="Ag":
-            node=Aggregation_Node(self.topology.node_numbers,0,0)
+            node=Aggregation_Node(self.topology.node_numbers)
             self.topology.node_numbers += 1
             self.canvas_coords = coords
-            #Aggregation_DC_Node
+
         elif name=="Prb":
             node=Probe(self.topology.node_numbers)
 
@@ -1238,6 +1243,11 @@ class Network_Frame():
             node=Gateway(self.topology.node_numbers)
             self.topology.node_numbers += 1
             self.canvas_coords = coords
+        elif name == "Agdc":
+            node = Aggregation_DC_Node(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
         else :
             print("node not identified")
             node=""
