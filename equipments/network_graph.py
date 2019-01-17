@@ -1,8 +1,19 @@
-import networkx as nx
-#import numpy as np
-import  csv
-import time
-from functools import  partial
+try:
+    import networkx as nx
+    import simpy
+    import csv
+    import time
+    from functools import partial
+    import random
+    import numpy as np
+except ValueError as error:
+    print("import error", error.args)
+    exit(1)
+#
+try:
+    from tkinter import *
+except ImportError:
+    from Tkinter import *
 
 data_file="/home/gnl/Desktop/mankul/flask_project/sdnProject0.2/equipments.csv"
 current_deployed_topology_file="current_topology.csv"### this file contain the current deployed topology
@@ -23,35 +34,55 @@ equipment_vendors=['cisco','juniper','nokia','ciena','huawei','fujitsu']#'arista
 line_cards_supported="types of line cards supported" # in the spreadsheet, line cards supported are seperated by ":"
 equipment_properties=[component_name,ports_per_cards,throughput,line_rate,line_cards,protocol,layer_2,layer_3,usage]
 
+mac_addresses_allotted={}
+ip_addresses_allotted={}
 
 canvas_height=1000
 canvas_width=1500
 #from topology import Topology
-try:
-    from tkinter import *
-except ImportError:
-    from Tkinter import *
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
+
+#import matplotlib.pyplot as plt
+#from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+#from matplotlib.figure import Figure
 #from variables import *
 from math import *
 #from network_equipment import *
 
-node_type={"Aggregation_DC_Node":{"color":"coral","radius":"13","name":"Ag","distance":290,},\
-           "Edge_DC_Node":{"color":"orangered","radius":"13","name":"Edg","distance":250},\
-           "Core_DC_Node":{"color":"cyan","radius":"14","name":"CD","distance":200},\
-           "P_Network_Node":{"color":"pink","radius":"14","name":"P","distance":170},\
-           "Core_Network_Node":{"color":"blue","radius":"14","name":"CN","distance":0},\
-           "Metro_Network_Node":{"color":"brown","radius":"13","name":"M","distance":100},\
-           "Access_Network_Node":{"color":"orange","radius":"12","name":"Acc","distance":350},\
-           "Server":{"color":"salmon","radius":"10","name":"S","distance":300},\
-           "Client_Node":{"color":"green","radius":"10","name":"Cl","distance":380},
-           "White Box":{"color":"white","radius":"12","name":"WB","distance":0},
-           "Controller":{"color":"lightblue","radius":"14","name":"Cntrlr","distance":0},\
-           "Probe Node":{"color":"yellow","side":"10","name":"Prb","distance":0}}
 
+general_node_type={"Switch":{"color":"steelblue1","radius":"12","name":"sw","distance":0},\
+                   "Router":{"color":"steelblue2","radius":"13","name":"R","distance":0},\
+                   "Gateway":{"color":"skyblue1","radius":"14","name":"G","distance":0},\
+    "Firewall":{"color":"skyblue2","radius":"14","name":"F","distance":0},\
+                   "Data_Center_InterConnect":{"color":"skyblue3","radius":"14","name":"Dci","distance":0}}
+network_node_type={
+           "Provider Node":{"color":"pink","radius":"14","name":"P","distance":170},\
+           "Core Node":{"color":"blue","radius":"14","name":"CN","distance":0},\
+           "Metro Node":{"color":"brown","radius":"13","name":"M","distance":100},\
+           "Access Node":{"color":"orange","radius":"12","name":"Acc","distance":350}, \
+    "Aggregation Node": {"color": "lightgreen", "radius": "12", "name": "Ag", "distance": 0}}
 
+data_center_node_type={"Aggregation_DC_Node":{"color":"coral","radius":"13","name":"Ag","distance":290,},\
+           "Edge DC Node":{"color":"orangered","radius":"13","name":"Edg","distance":250},\
+           "Core DC Node":{"color":"cyan","radius":"14","name":"CD","distance":200},\
+                       "Aggregation Node":{"color":"lightgreen","radius":"12","name":"Agdg","distance":0}
+                       }
+sdn_node_type={"White Box":{"color":"white","radius":"12","name":"WB","distance":0},\
+           "Controller":{"color":"lightblue","length":"50","breadth":"20","name":"Cntrlr","distance":0}}
+client_server_node_type={"Server":{"color":"salmon","radius":"10","name":"S","distance":300},\
+           "Client_Node":{"color":"green","radius":"10","name":"Cl","distance":380}}
+
+probe_node_type={"Probe Node":{"color":"yellow","length":"10","breadth":"10","name":"Prb","distance":0}}
+
+try:
+    node_type={}
+    node_type.update(network_node_type)
+    node_type.update(sdn_node_type)
+    node_type.update(probe_node_type)
+    node_type.update(data_center_node_type)
+    node_type.update(client_server_node_type)
+    node_type.update(general_node_type)
+except:
+    print("error in declaration of global variable dictionary items of node type")
 core_ring_radius=30
 metro_ring_radius=25
 metro_rings_distance=100
@@ -60,10 +91,110 @@ access_rings_distance=350
 inter_node_distance=70
 
 
+
+
+############################################################################
+###############################################################################################
+###############################################################################################
+
+
+class IP_Domain():
+    def __init__(self):
+        self.ip_domain_range=""
+        self.ip_addresses_for_hosts=[]
+        self.ip_address_host_map={}
+        #self.create_ip_host_range()
+
+    def create_ip_host_range(self):
+        pass
+
+
+
+
+class Ip_Address():
+    def __init__(self):
+        self.type=""
+        self.host_id=""
+        self.subnet_mask_id=""
+        self.gateway_id=""
+        self.domain_id=""
+
+
+
+    def create_ip_address(self,parent_address):
+        self.host_id=""
+
+        pass
+
+
+
+
+###############################################################################################
+###############################################################################################
+
+
+
+class Traffic():
+    def __init__(self):
+        pass
+
 ############################################################################################
+############################################################################################
+
+
+class MAC_Address():
+    def __init__(self):
+        #self.mac_address_alotted=[]
+        self.create_mac_address_id()
+
+    def create_mac_address_id(self):
+        #for i in range(48)
+        while(True):
+            address=""
+            for i in range(6):
+                #b1=b2=""
+                b1=bin(random.randint(0,15))[2:]
+                b2=bin(random.randint(0,15))[2:]
+                string=""
+                for i in range(4-len(b1)):
+                    string+=str(0)
+                b1+=string
+                string = ""
+                for i in range(4 - len(b2)):
+                    string += str(0)
+                b2+=string
+                slot=b1+b2#+":"
+                address += slot
+
+            if address not in mac_addresses_allotted:
+                mac_addresses_allotted.append(address)
+                break
+
+
+
+
+
+
+##################################################################################################################
+##################################################################################################################
+
+
+class Simulation():
+    def __init__(self):
+        self.environment=simpy.Environment()
+
+    def create_simulation(self):
+        self.environment.process(self.simulation_of_packet())
+
+
+    def simulation_of_packet(self):
+        pass
+
+
+
+
+
 ###############################################################Equipment loading###########3
-
-
 class Load_Network_Information():
     def __init__(self):
         ne = Network_Equipments()
@@ -250,7 +381,52 @@ class Load_Network_Information():
             node.canvas_coords = coords
             #Aggregation_DC_Node
         elif name=="Prb":
-            node=Probe()
+            node=Probe(self.topology.node_numbers)
+
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
+        elif name=="Cntrlr":
+            node=Controller(self.topology.node_numbers)
+
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
+        elif name=="WB":
+            node=White_Box(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
+        elif name == "Sw":
+            node = Switch(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
+        elif name == "R":
+            node = Router(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
+        elif name == "F":
+            node = Firewall(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+        elif name == "Dci":
+            node = DataCenter_Interconnect(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+        elif name == "G":
+            node = Gateway(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+        elif name == "Agdc":
+            node=Aggregation_DC_Node(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+        elif name == "Ag":
+            node=Aggregation_Node(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
         else :
             print("node not identified")
             node=""
@@ -411,20 +587,56 @@ class SubEquipment(Equipment):
 ####################################################################################
 
 
+class Node():
+    def __init__(self,node_id):
+        self.node_id=node_id
+        self.mac_address=""
+        self.ip_address=""
+        self.canvas_coords = ""
+        self.latitude = ""
+        self.longitude = ""
+        self.connecting_node_instance_list = []
 
-class Network_Node():
+    def create_mac_address(self):
+        self.mac_address=MAC_Address()
+
+    def create_ip_address(self):
+        pass
+
+
+class Switch(Node):
+    def __init__(self,node_id):
+        Node.__init__(self,node_id)
+
+class Router(Node):
+    def __init__(self,node_id):
+        Node.__init__(self,node_id)
+
+class Firewall(Node):
+    def __init__(self,node_id):
+        Node.__init__(self,node_id)
+
+class Gateway(Node):
+    def __init__(self,node_id):
+        Node.__init__(self,node_id)
+
+class DataCenter_Interconnect(Node):
+    def __init__(self,node_id):
+        Node.__init__(self,node_id)
+
+class Network_Node(Node):
     def __init__(self,node_id,ports):
         self.ports=ports
-        self.node_id=node_id
-
+        #self.node_id=node_id
+        Node.__init__(self,node_id)
         self.port_dictionary={}
 
         self.direction=0
-        self.canvas_coords=""
-        self.latitude=""
-        self.longitude=""
+        #self.canvas_coords=""
+        #self.latitude=""
+        #self.longitude=""
         self.node_equipment_dictionary={}
-        self.connecting_node_instance_list=[]
+        #self.connecting_node_instance_list=[]
         self.network_edge_labels_list = []
         self.equipment_list=[]
 
@@ -460,7 +672,9 @@ class Core(Network_Node):
         self.unused_ports=list(self.port_dictionary.keys())
         self.distance=30
 
-
+class Aggregation_Node(Network_Node):
+    def __init__(self,node):
+        Network_Node.__init__(self,node,ports=3)
 
 class P_Node(Network_Node):
     def __init__(self,node_id,number_of_ports):
@@ -507,9 +721,10 @@ class Port():
 # for data centres, port_dictionary are distributed among north_port_dictionary and south_port_dictionary
 
 
-class DC_Node():
+class DC_Node(Node):
     def __init__(self,node_id,number_of_ports):
-        self.node_id=node_id
+        #self.node_id=node_id
+        Node.__init__(self, node_id)
         self.capacity=""
         self.type_of_network=""
         self.connecting_switches_up=[]
@@ -525,13 +740,14 @@ class DC_Node():
 
 
         self.direction=0
-        self.canvas_coords=""
-        self.latitude = ""
-        self.longitude = ""
+        #self.canvas_coords=""
+        #self.latitude = ""
+        #self.longitude = ""
         self.node_equipment_dictionary=[]
-        self.connecting_node_instance_list=[]
+        #self.connecting_node_instance_list=[]
         self.network_edge_labels_list=[]
         self.equipment_list=[]
+
 
     def create_ports(self):
         self.create_north_ports(self.number_of_ports)
@@ -551,15 +767,19 @@ class DC_Node():
         pass
 
 
-class Server():
+class Aggregation_DC_Node(DC_Node):
+    def __init__(self,node_id):
+        DC_Node.__init__(self,node_id)
+class Server(Node):
     def __init__(self,server_id):
-        self.node_id=server_id
+        #self.node_id=server_id
+        Node.__init__(self, server_id)
         self.port=Port(1,self.node_id)
         self.type="Server"
         self.distance=350
-        self.latitude=""
-        self.longitude=""
-        self.connecting_node_instance_list=[]
+        #self.latitude=""
+        #self.longitude=""
+        #self.connecting_node_instance_list=[]
         self.network_edge_labels_list=[]
         self.equipment_list=[]
 
@@ -640,15 +860,16 @@ class Aggregation_Node(DC_Node):
         self.distance=220
 
 
-class Client_Node:
+class Client_Node(Node):
     def __init__(self,node_id):
-        self.node_id=node_id
+        #self.node_id=node_id
+        Node.__init__(self, node_id)
         self.type="Client_Node"
         self.direction=0
         self.distance=380
-        self.latitude=""
-        self.longitude=""
-        self.connecting_node_instance_list=[]
+        #self.latitude=""
+        #self.longitude=""
+        #self.connecting_node_instance_list=[]
         self.network_edge_labels_list = []
         self.equipment_list=[]
         self.port_dictionary={}
@@ -657,11 +878,46 @@ class Client_Node:
 #######################################################################################
 
 
-class Probe():
-    def __init__(self):
-        pass
+class Probe(Node):
+    def __init__(self,node_id):
+        #self.node_id=node_id
+        Node.__init__(self,node_id)
+        self.ports=2
+        #self.canvas_coords=""
+        #self.latitude = ""
+        #self.longitude = ""
+        #self.connecting_node_instance_list = []
+        self.network_edge_labels_list = []
+        self.port_dictionary={}
 
 
+class Controller(Node):
+    def __init__(self,node_id):
+        Node.__init__(self, node_id)
+        #self.node_id = node_id
+        # by default let's assume 3 ports
+        self.north_ports=1
+        self.south_ports=2
+        #self.canvas_coords = ""
+        #self.latitude = ""
+        #self.longitude = ""
+        #self.connecting_node_instance_list = []
+        self.network_edge_labels_list = []
+        self.port_dictionary={}
+
+
+class White_Box(Node):
+    def __init__(self,node_id):
+        #self.node_id = node_id
+        Node.__init__(self, node_id)
+        self.north_ports=1
+        self.ports=2
+        #self.canvas_coords = ""
+        #self.latitude = ""
+        #self.longitude = ""
+        #self.connecting_node_instance_list = []
+        self.network_edge_labels_list = []
+        self.port_dictionary={}
 
 
 class Topology():
@@ -696,10 +952,35 @@ class Network():
         #master=Tk()
         self.information_frame = Information_Frame(master,le)
         self.network_frame = Network_Frame(master, self.topology,self.information_frame)
+        self.node_frame=Node_Frame(master,self.network_frame)
 
+        self.information_frame.load_frame()
+        self.network_frame.show_topology_on_frame()
+        self.network_frame.node_numbers = self.topology.graph.number_of_nodes()
+        self.node_frame.create_window_pane_for_network_node_labels()
+
+
+
+class Node_Frame:
+    def __init__(self,master,network_frame):
+        self.master=master
+        self.network_frame=network_frame
+
+
+    def create_window_pane_for_network_node_labels(self):
+        #network_nodes_button=Button(self.canvas,"Network Nodes")
+        nodemenubar=Menu(self.master)
+        nodemenubar.add_command(label="Network Nodes",command=self.network_frame.create_window_pane_for_generic_network_node_labels)
+        nodemenubar.add_command(label="SDN Nodes", command=self.network_frame.create_window_pane_for_sdn_network_node_labels)
+        nodemenubar.add_command(label="Probe Nodes", command=self.network_frame.create_window_pane_for_probe_network_node_labels)
+        nodemenubar.add_command(label="Data Center Nodes",command=self.network_frame.create_window_pane_for_data_center_node_labels)
+        nodemenubar.add_command(label="Client Server Nodes",command=self.network_frame.create_window_pane_for_client_server_node_labels)
+        nodemenubar.add_command(label="General Nodes",command=self.network_frame.create_window_pane_for_general_nodes_label)
+        self.master.config(menu=nodemenubar)
 
 class Network_Frame():
     def __init__(self,master,topology,information_frame):
+        self.master=master
         self.information_frame=information_frame
         self.canvas=Canvas(master,height=canvas_height,width=20,bg="steelblue")
         self.canvas.pack(side=LEFT,expand=YES,fill=BOTH)
@@ -721,13 +1002,27 @@ class Network_Frame():
         #self.canvas_click_function()
 
         self.connecting_node_instance=""
-        self.show_topology_on_frame()
-        self.node_numbers = topology.graph.number_of_nodes()
         self.network_node_instances_labels={}
-        self.create_node_labels()
+
+        self.labels_generated_after_menu_node_type_selection=[]
+
+        #self.create_window_pane_for_network_node_labels()
 
         #print(self.node_numbers)
         #pass
+
+
+    def delete_labels_generated_for_menu_node_type_selection(self):
+        for label in self.labels_generated_after_menu_node_type_selection:
+            try:
+                self.canvas.delete(label)
+            except:
+                print("not deleted")
+            try:
+                self.node_label_dictionary.pop(label)
+                self.text_label_dictionary.pop(label)
+            except:
+                print("text label")
 
     def canvas_click_function(self):
         # on clicking on canvas reset all the labels on canvas
@@ -745,7 +1040,12 @@ class Network_Frame():
         coords=node_instance.canvas_coords
         name=node_instance.name
         attributes=node_type[name]
-        new_node_label = self.canvas.create_oval(coords, fill=attributes["color"])
+        try:
+            radius=attributes["radius"]
+            new_node_label = self.canvas.create_oval(coords, fill=attributes["color"])
+        except:
+            length=attributes["length"]
+            new_node_label = self.canvas.create_rectangle(coords,fill=attributes["color"])
 
         self.canvas.bind(new_node_label, "<Motion>", self.move_cursor_over_node)
 
@@ -900,6 +1200,44 @@ class Network_Frame():
             self.topology.node_numbers += 1
             self.canvas_coords = coords
             #Aggregation_DC_Node
+        elif name=="Prb":
+            node=Probe(self.topology.node_numbers)
+
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
+        elif name=="Cntrlr":
+            node=Controller(self.topology.node_numbers)
+
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
+        elif name=="WB":
+            node=White_Box(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+        elif name=="Sw":
+            node=Switch(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
+        elif name=="R":
+            node=Router(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+
+        elif name=="F":
+            node=Firewall(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+        elif name=="Dci":
+            node=DataCenter_Interconnect(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
+        elif name=="G":
+            node=Gateway(self.topology.node_numbers)
+            self.topology.node_numbers += 1
+            self.canvas_coords = coords
         else :
             print("node not identified")
             node=""
@@ -921,34 +1259,72 @@ class Network_Frame():
         print("cursor moved")
 
 
-    def create_node_labels(self):
+        #nodemenubar.add_cascade(label="nodes")
+        #elf.create_window_pane_for_generic_network_node_labels()
+
+
+    def create_window_pane_for_data_center_node_labels(self):
+        self.delete_labels_generated_for_menu_node_type_selection()
+        self.create_node_label_image(data_center_node_type)
+    def create_window_pane_for_client_server_node_labels(self):
+        self.delete_labels_generated_for_menu_node_type_selection()
+        self.create_node_label_image(client_server_node_type)
+    def create_window_pane_for_general_nodes_label(self):
+        self.delete_labels_generated_for_menu_node_type_selection()
+        self.create_node_label_image(general_node_type)
+
+    def create_window_pane_for_sdn_network_node_labels(self):
+        self.delete_labels_generated_for_menu_node_type_selection()
+        self.create_node_label_image(sdn_node_type)
+
+    def create_window_pane_for_probe_network_node_labels(self):
+        self.delete_labels_generated_for_menu_node_type_selection()
+        self.create_node_label_image(probe_node_type)
+
+    def create_window_pane_for_generic_network_node_labels(self):
+        self.delete_labels_generated_for_menu_node_type_selection()
+        self.create_node_label_image(network_node_type)
+
+
+        #self.label_entry = Label(self.canvas, text=node_property)
+        #window1 = self.canvas.create_window(100, canvas_height - 500, window=self.label_entry, height=200, width=200)
+    def create_node_label_image(self,node_type_dictionary):
         a=b=50
         print("creating the drag and drop part")
+        x =  100
+        y=20
+        width = 20
+        label=Label(self.canvas,text="Drag and Drop the node", width=30)
+        window_label = self.canvas.create_window(x,y,window=label,height=width,width=200)
+        #label.place(x=20,y=20)
 
-        label=Label(self.canvas,text="Drag and Drop the respective node", width=30)
-        label.place(x=20,y=20)
-        width=20
-
-        displacement=200
+        self.labels_generated_after_menu_node_type_selection.append(window_label)
+        displacement=150
         self.movement_objects={}
         #c=d=50
-        for node,attributes in node_type.items():
+        y=b+10
+        for node,attributes in node_type_dictionary.items():
             #print(node,attributes)
             try:
                 radius=int(attributes["radius"])
                 label = Label(self.canvas, text=node, width=width)
-                label.place(x=a, y=b)
+                window_label=self.canvas.create_window(x,y,window=label,height=width,width=200)
+                #label.place(x=a, y=b)
                 coords = a + displacement, b, a + displacement + 20, b + 20
                 # node_label=IntVar()
                 node_label = self.canvas.create_oval(coords, fill=attributes["color"])
 
             except:
-                side=int(attributes["side"])
+                length=int(attributes["length"])
+                breadth=int(attributes["breadth"])
                 label = Label(self.canvas, text=node, width=width)
-                label.place(x=a, y=b)
+                window_label = self.canvas.create_window(x, y, window=label, height=width, width=200)
+                #label.place(x=a, y=b)
                 coords = a + displacement, b, a + displacement + 20, b + 20
                 node_label=self.canvas.create_rectangle(coords,fill=attributes["color"])
 
+            self.labels_generated_after_menu_node_type_selection.append(window_label)
+            self.labels_generated_after_menu_node_type_selection.append(node_label)
             #node_label=Button(self.canvas,text=node,bd=2,bg="green")#
             self.canvas.bind(node_label, "<Motion>", self.move_cursor_over_node)
 
@@ -970,6 +1346,7 @@ class Network_Frame():
             #self.node_label_dictionary[node_label]=node
             #self.node_id_dictionary[node_label]=attributes
             b+=30
+            y+=30
 
 
     def testing_function(self,events    ):
@@ -1056,20 +1433,30 @@ class Display_Node():
         #text=self.text_label_dictionary[self.current_label]
         attributes = node_type[node]
         print("new node created on canvas ", node)
-        radius = int(attributes["radius"])
         x, y = event.x, event.y
+        try:
+            radius = int(attributes["radius"])
 
+            coords = x - radius, y - radius, x + radius, y + radius
+            new_node_instance = self.create_node_in_graph(node, attributes, coords)
+            #print(new_node_instance)
+            # identifying, if any node is present in the background. for drop  and add edge to work
 
-        coords = x - radius, y - radius, x + radius, y + radius
-        new_node_instance = self.create_node_in_graph(node, attributes, coords)
-        #print(new_node_instance)
-        # identifying, if any node is present in the background. for drop  and add edge to work
+            coords=self.identify_nodes_on_position(new_node_instance, event,coords)
 
-        coords=self.identify_nodes_on_position(new_node_instance, event,coords)
+            new_node_instance.canvas_coords = coords
 
-        new_node_instance.canvas_coords = coords
+            new_node_label = self.canvas.create_oval(coords, fill=attributes["color"])
+        except:
+            length=int(attributes["length"])
+            breadth=int(attributes["breadth"])
+            coords=x-length/2,y-breadth/2,x+length/2,y+breadth/2
 
-        new_node_label = self.canvas.create_oval(coords, fill=attributes["color"])
+            new_node_instance=self.create_node_in_graph(node,attributes,coords)
+
+            coords=self.identify_nodes_on_position(new_node_instance,event,coords)
+            new_node_instance.canvas_coords=coords
+            new_node_label=self.canvas.create_rectangle(coords,fill=attributes["color"])
         #self.canvas.bind(new_node_label, "<Motion>", self.move_cursor_over_node)
 
         try:
@@ -1198,13 +1585,19 @@ class Node_Movements():
         #self.text_label_dictionary.pop(self.current_label)
         self.node_label_dictionary.pop(self.current_label)
         x,y=event.x,event.y
-        radius=int(attributes["radius"])
-        coords=x-radius,y-radius,x+radius,y+radius
+        try:
+            radius=int(attributes["radius"])
+            coords=x-radius,y-radius,x+radius,y+radius
 
-        #updating the coords for the moved node
-        current_node_instance.canvas_coords=coords
-        new_node_label=self.canvas.create_oval(coords,fill=attributes["color"])
-
+            #updating the coords for the moved node
+            current_node_instance.canvas_coords=coords
+            new_node_label=self.canvas.create_oval(coords,fill=attributes["color"])
+        except:
+            length=int(attributes["length"])
+            breadth=int(attributes["breadth"])
+            coords=x-length/2,y-breadth/2,x+length/2,y+breadth/2
+            current_node_instance.canvas_coords=coords
+            new_node_label=self.canvas.create_rectangle(coords,fill=attributes["color"])
         self.create_edge_entry_point(current_node_instance)
 
         #self.canvas.bind(new_node_label, "<Motion>", lambda event:self.move_cursor_over_node(event))
@@ -1372,7 +1765,7 @@ class Information_Frame():
         self.current_node = ""
         self.current_vendor_name = ""
         self.network_equipments_on_nodes = {}
-        self.load_frame()
+        #self.load_frame()
         # self.shortest_path_label.bind(<<)
 
         #vendor_label = Label(self.frame, text="Select Equipment for each node")
