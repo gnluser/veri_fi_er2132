@@ -604,15 +604,21 @@ class Node():
         self.mac_address=""
         self.ip_address=""
         self.canvas_coords = ""
-        self.latitude = ""
-        self.longitude = ""
+        self.latitude = 0
+        self.longitude = 0
         self.connecting_node_instance_list = []
+        self.create_addresses()
+
+    def create_addresses(self):
+        self.create_mac_address()
+        self.create_ip_address()
 
     def create_mac_address(self):
-        self.mac_address=MAC_Address()
+        self.mac_address = mac_addresses.create_mac_address_id()
 
     def create_ip_address(self):
-        pass
+        self.ip_address=Ip_Address
+
 
 
 
@@ -887,6 +893,7 @@ class Probe(Node):
         #self.node_id=node_id
         Node.__init__(self,node_id)
         self.ports=2
+        self.type="Probe"
         #self.canvas_coords=""
         #self.latitude = ""
         #self.longitude = ""
@@ -1380,7 +1387,11 @@ class Network_Frame():
             self.create_edge_entry_point(current_node_instance)
         except:
             print("new node is created")
+        #self.information_frame.node_property_display.delete(1.0, END)
+        #self.set_information_frame_text_box_for_node_information()
+        #self.display_information_frame_text_box_for_node_information()
         self.canvas.update()
+
         #coords=500,500,530,530
         #self.canvas.create_oval(coords)
 
@@ -1391,7 +1402,7 @@ class Network_Frame():
         for window in self.entry_window:
             self.canvas.delete(window)
         self.entry_window=[]
-        self.information_frame.node_property_display.delete(1.0,END)
+        #self.information_frame.node_property_display.delete(1.0,END)
         #self.canvas.delete(self.node_entry)
 
     def node_clicked_on_canvas(self,event):
@@ -1409,9 +1420,11 @@ class Network_Frame():
         #self.node_entry=Entry(self.canvas)
         #window=self.canvas.create_window(x-100,y,window=self.node_entry,height=70,width=150)
         #self.entry_window.append(window)
-        node_property="Longitude is "+ str(current_node_instance.longitude), "\nLatitude is "+str(current_node_instance.latitude)
+        #node_property="Longitude is "+ str(current_node_instance.longitude), "\nLatitude is "+str(current_node_instance.latitude)
         #self.node_entry.insert(0,node_property)
-        self.information_frame.node_property_display.insert(END,node_property)
+        #self.information_frame.node_property_display.insert(END,node_property)
+        self.set_information_frame_text_box_for_node_information(current_node_instance)
+        #print("node property is ")
 
         self.create_edge_entry_point(current_node_instance)
         self.node_entry.update()
@@ -1495,6 +1508,16 @@ class Display_Node():
         current_node_instance = self.network_node_instances_labels[self.current_label]
         # print(self.current_label)
 
+        self.set_node_information_window_box(current_node_instance)
+        self.canvas.tag_bind(new_node_label, "<Button-1>",self.node_clicked_on_canvas)  # lambda event: self.node_clicked(event)#, new_node_label,text_at_previous_node_place,x,y))
+        self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>", self.move_node)  # lambda event : self.move_node(event,new_node_label,text_at_previous_node_place,new_node_instance,attributes))
+        self.canvas.update()
+        #print("node jfnj")
+        self.information_frame.property_selection(self.node_numbers, new_node_instance)
+        #elf.node_entry.insert(0,node_property)
+        #elf.node_entry.update()
+
+    def set_node_information_window_box(self,current_node_instance):
         node_property = "Enter node's longitude\n and latitude, seperated by space"
         self.label_entry = Label(self.canvas,text=node_property)
         window1 = self.canvas.create_window(100, canvas_height-500, window=self.label_entry, height=200, width=200)
@@ -1507,13 +1530,23 @@ class Display_Node():
         self.node_entry.bind('<Key-Return>',lambda event : self.set_node_property_by_entry(event,current_node_instance,window1,window2))
 
 
-        self.canvas.tag_bind(new_node_label, "<Button-1>",self.node_clicked_on_canvas)  # lambda event: self.node_clicked(event)#, new_node_label,text_at_previous_node_place,x,y))
-        self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>", self.move_node)  # lambda event : self.move_node(event,new_node_label,text_at_previous_node_place,new_node_instance,attributes))
-        self.canvas.update()
-        #print("node jfnj")
-        self.information_frame.property_selection(self.node_numbers, new_node_instance)
-        #elf.node_entry.insert(0,node_property)
-        #elf.node_entry.update()
+
+    def set_information_frame_text_box_for_node_information(self,current_node_instance):
+        self.reset_entries_and_labels()
+        self.display_information_frame_text_box_for_node_information()
+
+    def display_information_frame_text_box_for_node_information(self,current_node_instance):
+        self.information_frame.node_property_display.delete(1.0, END)
+        self.information_frame.node_property_display.insert(END,"Node Name ")
+        self.information_frame.node_property_display.insert(END,current_node_instance.type)
+        self.information_frame.node_property_display.insert(END,"\nNode ID ")
+        self.information_frame.node_property_display.insert(END,current_node_instance.node_id)
+        self.information_frame.node_property_display.insert(END,"\nLatitude ")
+        self.information_frame.node_property_display.insert(END,str(current_node_instance.latitude))
+        self.information_frame.node_property_display.insert(END,"\nLongitude ")
+        self.information_frame.node_property_display.insert(END,str(current_node_instance.longitude))
+        #self.information_frame.node_property_display.insert(END,)
+
     def set_node_property_by_entry(self,event,current_node_instance,window1,window2):
         node_property = self.node_entry.get()
         #white_space = [" ", ",", "\t", "\n"]
@@ -1525,6 +1558,7 @@ class Display_Node():
         self.entry_window.remove(window2)
         self.canvas.delete(window1)
         self.canvas.delete(window2)
+        self.set_information_frame_text_box_for_node_information(current_node_instance)
 
         '''
         self.node_with_movements(new_node_label,coords, x, y,node_text)
@@ -1609,6 +1643,8 @@ class Node_Movements():
             current_node_instance.canvas_coords=coords
             new_node_label=self.canvas.create_rectangle(coords,fill=attributes["color"])
         self.create_edge_entry_point(current_node_instance)
+
+        self.set_node_information_window_box( current_node_instance)
 
         #self.canvas.bind(new_node_label, "<Motion>", lambda event:self.move_cursor_over_node(event))
 
@@ -1742,6 +1778,7 @@ class Information_Frame():
 
         self.node_property_display = Text(self.frame, height=5)
         self.node_property_display.grid(row=0, column=0, columnspan=3)
+        self.node_property_display.insert(1.0,"text box")
 
         self.shortest_path_label = Label(self.frame, text="Shortest Path")
         #self.shortest_path_label.pack(side=TOP)
@@ -1885,7 +1922,7 @@ class Information_Frame():
 ############
             #pass
 
-
+mac_addresses=MAC_Address
 le=Load_Network_Information()
 print("network graph ",le.topology.graph)
 network=Network(le.topology)
