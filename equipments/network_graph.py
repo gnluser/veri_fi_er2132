@@ -34,8 +34,10 @@ equipment_vendors=['cisco','juniper','nokia','ciena','huawei','fujitsu']#'arista
 line_cards_supported="types of line cards supported" # in the spreadsheet, line cards supported are seperated by ":"
 equipment_properties=[component_name,ports_per_cards,throughput,line_rate,line_cards,protocol,layer_2,layer_3,usage]
 
-mac_addresses_allotted={}
-ip_addresses_allotted={}
+mac_addresses_allotted=[]
+ip_addresses_allotted=[]
+mac_addresses_allotted_to_node={}
+ip_addresses_allotted_to_node={}
 
 canvas_height=1000
 canvas_width=1500
@@ -102,6 +104,7 @@ class IP_Domain():
         self.ip_domain_range=""
         self.ip_addresses_for_hosts=[]
         self.ip_address_host_map={}
+        self.subnet_domain_pool=[]
         #self.create_ip_host_range(ip_address_of_network,number_of_hosts)
 
     def create_ip_host_range(self,ip_address_of_network,number_of_hosts):
@@ -115,30 +118,51 @@ class IP_Domain():
             ip_addr.subnet_mask=(ip_address_of_network.subnet_mask.split('1',1)[0]+add_to_host_bits).ljust(32,'0')
             #ip_addr.host_id=
             #+str(int(ip_no,2))
-            ip_addr.ip_address=((ip_address_of_network.ip_address and ip_address_of_network.subnet_mask)+bin(ip_no)[2:]).ljust(32,"0")
-            ip_address_of_network.subnet_domain_pool.append(ip_addr)
+            mask="".join([ord(a) and ord(b) for a,b in zip(ip_address_of_network.ip_address , ip_address_of_network.subnet_mask)])
+            ip_addr.ip_address=(mask+bin(ip_no)[2:]).ljust(32,"0")
+            self.subnet_domain_pool.append(ip_addr)
+            ip_address_of_network.subnet_addresses_pool=[]
 
 
 
 
 
 class Ip_Address():
-    def __init__(self):
+    def __init__(self,parent_ip_address):
         self.type=""
+        self.parent_ip_address=parent_ip_address
         self.ip_address=""
         self.host_id=""
         self.subnet_mask=""
         self.gateway_id=""
         self.domain_id=""
-        self.subnet_domain_pool=[]
+        self.subnet_addresses_pool=[]
         self.subnet_distributed_addresses=[]
+        self.ip_domain=IP_Domain()
 
+    def dafault_ip_address(self):
+        if self.parent_ip_address=="":
+            self.create_ip_address()
+        else:
+            try:
+                self.ip_address=self.parent_ip_address.subnet_addresses_pool.pop(0)
+            except:
+                self.create_ip_address()
 
+    def create_ip_address(self):
+        i=0
+        while(i<100000):
+            b1=bin(random.randint(0,15))[2:]
+            b1=b1.rjust(24,"0")
+            address=("1010"+b1).rjust(32,"0")
+            if address not in ip_addresses_allotted:
+                ip_addresses_allotted.append(address)
+                self.ip_address=address
+                print("ip address created ",address)
+                break
+            i+=1
+        #self.ip_address="".join(['0' for i in range(32)])
 
-    def create_ip_address(self,parent_address):
-        self.host_id=""
-
-        pass
 
 
 
@@ -158,8 +182,9 @@ class Traffic():
 
 class MAC_Address():
     def __init__(self):
+        self.mac_address=""
         #self.mac_address_alotted=[]
-        self.create_mac_address_id()
+        #self.create_mac_address_id()
 
     def create_mac_address_id(self):
         #for i in range(48)
@@ -184,6 +209,7 @@ class MAC_Address():
 
             if address not in mac_addresses_allotted:
                 mac_addresses_allotted.append(address)
+                self.mac_address=address
                 break
 
 
@@ -614,10 +640,14 @@ class Node():
         self.create_ip_address()
 
     def create_mac_address(self):
-        self.mac_address = mac_addresses.create_mac_address_id()
+        self.mac_address=MAC_Address()
+        self.mac_address.create_mac_address_id()
+        mac_addresses_allotted_to_node[self.mac_address.mac_address]=self
 
     def create_ip_address(self):
-        self.ip_address=Ip_Address
+        self.ip_address=Ip_Address(parent_ip_address="")
+        self.ip_address.create_ip_address()
+        ip_addresses_allotted_to_node[self.ip_address.ip_address]=self
 
 
 
@@ -905,6 +935,7 @@ class Probe(Node):
 class Controller(Node):
     def __init__(self,node_id):
         Node.__init__(self, node_id)
+        self.type="Controller"
         #self.node_id = node_id
         # by default let's assume 3 ports
         self.north_ports=1
@@ -923,6 +954,7 @@ class White_Box(Node):
         Node.__init__(self, node_id)
         self.north_ports=1
         self.ports=2
+        self.type="White Box"
         #self.canvas_coords = ""
         #self.latitude = ""
         #self.longitude = ""
@@ -931,15 +963,26 @@ class White_Box(Node):
         self.port_dictionary={}
 
 
+
+
 class Topology():
     def __init__(self):
         self.graph=nx.Graph()
         self.network_node_instance_list=[]
         self.node_numbers=0
-        print("topolog vbg")
+        self.port_graph=nx.Graph()
+        self.ip_address_graph=nx.Graph()
 
     def draw_Network(self):
         pass
+
+    def add_edges_to_topology(self,node_instance_1,node_instance_2):
+        self.graph.add_edge(node_instance_1,node_instance_2)
+        self.ip_address_graph.add_edge(node_instance_1.ip_address,node_instance_2.ip_address)
+
+    def add_nodes_to_topology(self,node_instance):
+        self.graph.add_node(node_instance)
+        self.ip_address_graph.add_node(node_instance)
 
 
 
@@ -1060,13 +1103,13 @@ class Network_Frame():
 
         self.canvas.bind(new_node_label, "<Motion>", self.move_cursor_over_node)
 
-        # node_text = self.canvas.create_text(x, y, text=attributes["name"])
+
         self.current_label = new_node_label
         self.node_label_dictionary[new_node_label] = name
-        # self.text_label_dictionary[new_node_label]=node_text
+
 
         self.network_node_instances_labels[new_node_label] = node_instance
-        # text_at_previous_node_place=node_text
+
 
         #self.identify_nodes_on_position(node_instance,coords)
 
@@ -1078,22 +1121,20 @@ class Network_Frame():
         self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
                              self.move_node)  # lambda event : self.move_node(event,new_node_label,text_at_previous_node_place,new_node_instance,attributes))
         self.canvas.update()
-        # print("node jfnj")
+
         self.information_frame.property_selection(self.node_numbers, node_instance)
 
-        #pass
 
     def create_edge_between_drop_and_positioned_nodes(self,new_node_instance):
         # direction is left
-        print("new edge created between ",new_node_instance.node_id," ",self.connecting_node_instance.node_id)
 
+        print("new edge created between ",new_node_instance.node_id," ",self.connecting_node_instance.node_id)
         coords1=new_node_instance.canvas_coords
         coords2=self.connecting_node_instance.canvas_coords
-        #x1,y1,x2,y2
-        #''
+
         x1,y1=coords1[2],int(coords1[1] + (coords1[3]-coords1[1]) * 0.8)
         x2,y2=coords2[0],int(coords2[1] + (coords2[3]-coords2[1]) * 0.2)
-        #''
+
         edge_label=self.canvas.create_line(x1,y1,x2,y2)
         new_node_instance.connecting_node_instance_list.append(self.connecting_node_instance)
         self.connecting_node_instance.connecting_node_instance_list.append(new_node_instance)
@@ -1103,7 +1144,7 @@ class Network_Frame():
         self.connecting_node_instance.network_edge_labels_list.append(edge_label)
 
         self.connecting_node_instance=""
-        #pass
+
 
 
 
@@ -1263,7 +1304,9 @@ class Network_Frame():
 
     def create_node_in_graph(self,node,attributes,coords):
         node=self.create_network_node_instance(attributes["name"],coords)
-        self.topology.graph.add_node(node)
+        #self.topology.add_nodes_to_topology()
+        #self.topology.graph.add_node(node)
+        #self.topology.ip_address_graph.add_node(node.ip_address)
         return node
     #def move_node(self,event,node):#,circle_id,radius):
         #print(self.canvas.canvasx(event),self.canvas.canvasy(event))
@@ -1488,8 +1531,12 @@ class Display_Node():
             print("tr",type(self.connecting_node_instance),type(new_node_instance))
             if self.connecting_node_instance!="":
                 self.create_edge_between_drop_and_positioned_nodes(new_node_instance)
+                self.topology.add_edge_to_topology(new_node_instance,self.connecting_node_instance)
+            else:
+                self.topology.add_nodes_to_topology(new_node_instance)
         except:
             print("no edge to add")
+
 
 
         self.create_edge_entry_point(new_node_instance)
@@ -1518,11 +1565,11 @@ class Display_Node():
         #elf.node_entry.update()
 
     def set_node_information_window_box(self,current_node_instance):
-        node_property = "Enter node's longitude\n and latitude, seperated by space"
+        self.set_information_frame_text_box_for_node_information(current_node_instance)
+        node_property = "Enter node's\na)longitude, \nb)latitude, \nc)Ip_address, \nd)Number of ports \nseperated by spaces respectively"
         self.label_entry = Label(self.canvas,text=node_property)
         window1 = self.canvas.create_window(100, canvas_height-500, window=self.label_entry, height=200, width=200)
         self.entry_window.append(window1)
-
         node_property=StringVar()
         self.node_entry=Entry(self.canvas,textvariable=node_property)
         window2= self.canvas.create_window(100,canvas_height-300,window=self.node_entry,height=200,width=200)
@@ -1533,7 +1580,7 @@ class Display_Node():
 
     def set_information_frame_text_box_for_node_information(self,current_node_instance):
         self.reset_entries_and_labels()
-        self.display_information_frame_text_box_for_node_information()
+        self.display_information_frame_text_box_for_node_information(current_node_instance)
 
     def display_information_frame_text_box_for_node_information(self,current_node_instance):
         self.information_frame.node_property_display.delete(1.0, END)
@@ -1545,6 +1592,11 @@ class Display_Node():
         self.information_frame.node_property_display.insert(END,str(current_node_instance.latitude))
         self.information_frame.node_property_display.insert(END,"\nLongitude ")
         self.information_frame.node_property_display.insert(END,str(current_node_instance.longitude))
+        self.information_frame.node_property_display.insert(END,"\nMAC Address")
+        self.information_frame.node_property_display.insert(END,str(current_node_instance.mac_address.mac_address))
+        self.information_frame.node_property_display.insert(END,"\nIP Address")
+        self.information_frame.node_property_display.insert(END,str(current_node_instance.ip_address.ip_address))
+
         #self.information_frame.node_property_display.insert(END,)
 
     def set_node_property_by_entry(self,event,current_node_instance,window1,window2):
@@ -1922,7 +1974,7 @@ class Information_Frame():
 ############
             #pass
 
-mac_addresses=MAC_Address
+
 le=Load_Network_Information()
 print("network graph ",le.topology.graph)
 network=Network(le.topology)
