@@ -32,7 +32,8 @@ layer_3='Layer 3 features'
 usage='usage'
 equipment_vendors=['cisco','juniper','nokia','ciena','huawei','fujitsu']#'arista',
 line_cards_supported="types of line cards supported" # in the spreadsheet, line cards supported are seperated by ":"
-equipment_properties=[component_name,ports_per_cards,throughput,line_rate,line_cards,protocol,layer_2,layer_3,usage]
+interface_name="Interface name"
+equipment_properties=[component_name,interface_name,ports_per_cards,throughput,line_rate,line_cards,protocol,layer_2,layer_3,usage]
 
 mac_addresses_allotted=[]
 ip_addresses_allotted=[]
@@ -224,15 +225,87 @@ class MAC_Address():
 class Simulation():
     def __init__(self):
         self.environment=simpy.Environment()
+        self.link_delay=10# micro second
+        self.packet_id=0
+        self.max_time=1000
+
+    def create_ip_packets(self,number_of_packets):
+        packets=[]
+        for i in range(number_of_packets):
+            packet=Packet("IP",1500,self.packet_id)
+            packets.append(packet)
+            self.packet_id+=1
+        return packets
 
     def create_simulation(self):
         self.environment.process(self.simulation_of_packet())
+
+    def start_ip_traffic_between_two_nodes(self,information_frame,topology):
+        #self.information_frame
+        print("starting ip traffic")
+        node1=topology.node_instance_dictionary_by_node_id[int(information_frame.node_A.get())]
+        node2=topology.node_instance_dictionary_by_node_id[int(information_frame.node_B.get())]
+        packets=self.create_ip_packets(10)
+        shortest_path=topology.find_shortest_path(node1,node2)
+        information_frame.set_shortest_path_box_window(shortest_path)
+        self.environment.process(self.start_ip_simulation(shortest_path,packets))
+        self.max_time+=self.environment.now
+        self.environment.run(until=self.max_time)
+        print("two nodes traffic completed suceessfully")
+
+
+
+    def start_all_nodes_ip_traffic(self,information_frame,topology):
+
+        node_instance_list=topology.node_instance_dictionary_by_node_id.values()
+        nodes_pair=zip(node_instance_list,node_instance_list)
+        for node1,node2 in nodes_pair:
+            if node1 != node2:
+                packets=self.create_ip_packets(10)
+                shortest_path=topology.find_shortest_path(node1,node2)
+                self.environment.process(self.start_ip_simulation(shortest_path,packets))
+        self.max_time+=self.environment.now
+        self.environment.run(until=self.max_time)
+        print("all node traffic completed successfully")
+
+    def start_ip_simulation(self,shortest_path,packets):
+        for packet in packets:
+            print("packet ",str(packet.type),"\tpacket id ",str(packet.packet_id))
+            for node in shortest_path:
+                print("node ",node,"\t id ",str(node.node_id),str(self.environment.now))
+                yield  self.environment.timeout(self.link_delay)
+
 
 
     def simulation_of_packet(self):
         pass
 
 
+
+
+class Packet():
+    def __init__(self,type,size,packet_id):
+        self.type=type
+        self.size=size
+        self.packet_id=packet_id
+
+
+
+
+##################################################################################################
+##################################################################################################
+
+
+
+
+class Flow_Table():
+    def __init__(self):
+        pass
+
+
+class Routing_Table():
+    def __init__(self):
+        self.routing_table_for_device={}
 
 
 
@@ -378,96 +451,81 @@ class Load_Network_Information():
         name=attributes["name"]
         if name=="Cl":
             node=Client_Node(self.topology.node_numbers)
-            self.topology.node_numbers+=1
             node.canvas_coords=coords
             #client
         elif name=="S":
             node= Server(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             node.canvas_coords = coords
             #Server
         elif name=="Acc":
             node=Access_Node(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             node.canvas_coords = coords
             #Access_Network_Node
             #Access_Network_Node
         elif name=="M":
             node=Metro(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             node.canvas_coords = coords
             #Metro_Network_Node
         elif name=="CN":
             node=Core(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             node.canvas_coords = coords
             #Core_Network_Node
         elif name=="P":
             node=P_Node(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             node.canvas_coords = coords
             #P_Network_Node
         elif name=="CD":
             node=Core_Node(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             node.canvas_coords = coords
             #Core_DC_Node
         elif name=="Edg":
             node=Edge_Node(self.topology.node_numbers,0,0)
-            self.topology.node_numbers += 1
             node.canvas_coords = coords
             #Edge_DC_Node
         elif name=="Prb":
             node=Probe(self.topology.node_numbers)
-
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         elif name=="Cntrlr":
             node=Controller(self.topology.node_numbers)
+            node.start_controller(self.topology)
 
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         elif name=="WB":
             node=White_Box(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         elif name == "Sw":
             node = Switch(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         elif name == "R":
             node = Router(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         elif name == "F":
             node = Firewall(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
         elif name == "Dci":
             node = DataCenter_Interconnect(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
         elif name == "G":
             node = Gateway(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
         elif name == "Agdc":
             node=Aggregation_DC_Node(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
         elif name == "Ag":
             node=Aggregation_Node(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
         else :
             print("node not identified")
             node=""
             #new node
+
+        self.topology.node_instance_dictionary_by_node_id[self.topology.node_numbers]=node
+        self.topology.node_numbers += 1
         return node
 
 
@@ -597,6 +655,11 @@ class Equipment():
         except:
             print("no data for cards")
 
+    # on selecting sub equipment add this to equipment properties. on selection of cards from the gui
+    def set_equipment_properties(self,items):
+        pass
+
+
     def subequipments_list_function(self,line_cards):
         subequipment_list=[]
         for words in line_cards.split(","):
@@ -617,7 +680,26 @@ class SubEquipment(Equipment):
         Equipment.__init__(self)
         self.name=""
         self.id=""
+        self.port_instance_list=[]
 
+
+    def set_subequipment(self,subequipment_items,topology,node_instance):
+        #ubequipment_items[ports] to be used
+        ports_size_dictionary = {}
+        ports_size_dictionary[1] = 5
+        ports_size_dictionary[10] = 5
+        ports_size_dictionary[100] = 5
+        self.initialize_subequipment_property(ports_size_dictionary,topology,node_instance)
+    # initilialize this on selecting the module from the gui
+    def initialize_subequipment_property(self,ports_size_dictionary,topology,node_instance):
+        node_instance.subequipment_dictionary_of_port_lists[self]=[]
+        for port_size, number_of_ports in ports_size_dictionary.items():
+            # create port
+            for port in range(number_of_ports):
+                port_instance=Port(topology.port_number,port_size,self,node_instance)
+                self.port_instance_list.append(port_instance)
+                node_instance.subequipment_dictionary_of_port_lists[self].append(port_instance)
+                topology.port_number+=1
 
 
 ##################################################################  Node Attributes
@@ -633,7 +715,17 @@ class Node():
         self.latitude = 0
         self.longitude = 0
         self.connecting_node_instance_list = []
+        self.subequipment_dictionary_of_port_lists={}
         self.create_addresses()
+        self.queue_size=""
+        self.packet_queue=[]## queuing packets instances
+        self.subequipment_list=[]
+
+
+    def create_subequipment(self):
+        # initialize only one subequipment by default
+        subequipment=SubEquipment()
+        return subequipment
 
     def create_addresses(self):
         self.create_mac_address()
@@ -691,20 +783,22 @@ class Network_Node(Node):
         self.node_equipment_dictionary={}
         #self.connecting_node_instance_list=[]
         self.network_edge_labels_list = []
-        self.equipment_list=[]
+        self.subequipment_list=[]
 
 
-
+    '''
     def create_ports(self):
         for ports in range(self.ports):
-            self.port_dictionary[ports]=Port(ports,self.node_id)
+            self.port_dictionary[ports]=Port(ports,self.node_id,port_capacity=0)
+    '''
+
 
 
 class Access_Node(Network_Node):
     def __init__(self,node,ports):
         Network_Node.__init__(self,node, ports)
         self.type="Access_Network_Node"
-        self.create_ports()
+        #self.create_ports()
         self.unused_ports = list(self.port_dictionary.keys())
         self.distance=300
 
@@ -712,7 +806,7 @@ class Access_Node(Network_Node):
 class Metro(Network_Node):
     def __init__(self,node,ports):
         Network_Node.__init__(self,node,ports)
-        self.create_ports()
+        #self.create_ports()
         self.type="Metro_Network_Node"
         self.unused_ports = list(self.port_dictionary.keys())
         self.distance=200
@@ -721,7 +815,7 @@ class Core(Network_Node):
     def __init__(self,node,ports):
         Network_Node.__init__(self,node,ports)
         self.type="Core_Network_Node"
-        self.create_ports()
+        #self.create_ports()
         self.unused_ports=list(self.port_dictionary.keys())
         self.distance=30
 
@@ -736,7 +830,7 @@ class P_Node(Network_Node):
         self.type="P_Network_Node"
         #self.node_id=node_id
         #self.ports=number_of_ports
-        self.create_ports()
+        #self.create_ports()
         self.unused_ports = list(self.port_dictionary.keys())
         #Node.__init__(self,node_id,number_of_ports)
         #pass
@@ -747,8 +841,8 @@ class P_Node(Network_Node):
 
 
 
-
-class Card():
+'''
+class Card(): # subequipment class created alias
     def __init__(self):
         self.card_id=""
         self.ports=""
@@ -756,17 +850,20 @@ class Card():
         self.network=""
 
     def ports_allocation(self):
-        port=Port()
+        #port=Port()
         pass
+'''
 
 
 class Port():
-    def __init__(self,port_id,node_id):
+    def __init__(self,port_id,port_capacity,subequipment_instance,node_instance):
+
         self.port_id=port_id
-        self.node_id=node_id
-        self.network=""
-        self.capacity=""
+        self.node_instance=node_instance
+        self.subequipment_instance=subequipment_instance
+        self.port_capacity=port_capacity
         self.protocol=""
+        self.network=""
         #self.unused_ports=[]
 
 
@@ -800,21 +897,21 @@ class DC_Node(Node):
         self.node_equipment_dictionary=[]
         #self.connecting_node_instance_list=[]
         self.network_edge_labels_list=[]
-        self.equipment_list=[]
+        self.subequipment_list=[]
 
-
+    '''
     def create_ports(self):
         self.create_north_ports(self.number_of_ports)
         self.create_south_ports(self.number_of_ports)
-
+    
     def create_south_ports(self,number_of_ports):
         for port in range(number_of_ports):
-            self.south_ports_dictionary[port] = Port(port, self.node_id)
+            self.south_ports_dictionary[port] = Port(port, self.node_id,port_capacity=0)
 
     def create_north_ports(self,number_of_ports):
         for port in range(number_of_ports):
-            self.north_ports_dictionary[port] = Port(port, self.node_id)
-
+            self.north_ports_dictionary[port] = Port(port, self.node_id,port_capacity=0)
+    '''
 
     def cards_allocation(self):
         card=Card()
@@ -830,14 +927,14 @@ class Server(Node):
     def __init__(self,server_id):
         #self.node_id=server_id
         Node.__init__(self, server_id)
-        self.port=Port(1,self.node_id)
+        #self.port=Port(1,self.node_id,port_capacity=0)
         self.type="Server"
         self.distance=350
         #self.latitude=""
         #self.longitude=""
         #self.connecting_node_instance_list=[]
         self.network_edge_labels_list=[]
-        self.equipment_list=[]
+        self.subequipment_list=[]
 
 
 class Pod():
@@ -893,7 +990,7 @@ class Edge_Node(DC_Node):
         DC_Node.__init__(self,node,number_of_ports)
         self.type="Edge_DC_Node"
         self.pod_id=pod_id
-        self.create_ports()
+        #self.create_ports()
         self.distance=240
 
 
@@ -911,7 +1008,7 @@ class Client_Node(Node):
         #self.longitude=""
         #self.connecting_node_instance_list=[]
         self.network_edge_labels_list = []
-        self.equipment_list=[]
+        self.subequipment_list=[]
         self.port_dictionary={}
 
 #######################################################################################
@@ -946,7 +1043,25 @@ class Controller(Node):
         #self.connecting_node_instance_list = []
         self.network_edge_labels_list = []
         self.port_dictionary={}
+        self.controller_ip='127.0.0.1'
+        self.port="6640"
 
+
+    #def create_connection(self,ip_address="127.0.0.1",port="6640"):
+
+    def start_controller(self,topology):
+        import sys
+        import os
+
+        try:
+            os.system("telnet -e A %d %d", self.controller_ip, self.port)
+            topology.upload_topology()
+
+        except:
+            print("controller is not running")
+
+    def stop_controller(self):
+        pass
 
 class White_Box(Node):
     def __init__(self,node_id):
@@ -969,31 +1084,50 @@ class Topology():
     def __init__(self):
         self.graph=nx.Graph()
         self.network_node_instance_list=[]
-        self.node_numbers=0
+        self.node_numbers=1
+        self.node_instance_dictionary_by_node_id={}
         self.port_graph=nx.Graph()
         self.ip_address_graph=nx.Graph()
+        self.port_numbers=1
 
     def draw_Network(self):
         pass
 
-    def add_edges_to_topology(self,node_instance_1,node_instance_2):
+
+    def find_shortest_path(self,node_instance_1,node_instance_2):
+        shortest_path=nx.shortest_path(self.graph,node_instance_1,node_instance_2)
+        return shortest_path
+
+    def add_edge_to_topology(self,node_instance_1,node_instance_2):
+
         self.graph.add_edge(node_instance_1,node_instance_2)
+        print(node_instance_1)
+        print(node_instance_2)
+        print("edge added to topology graph")
         self.ip_address_graph.add_edge(node_instance_1.ip_address,node_instance_2.ip_address)
+        print("edge added to ip address graph")
 
     def add_nodes_to_topology(self,node_instance):
         self.graph.add_node(node_instance)
         self.ip_address_graph.add_node(node_instance)
+    def upload_topology(self):
+        for node in self.graph.nodes:
+            print(node)
+            node.controller_ip="127.0.0.1"
+            node.controller_port="6640"
 
-
+    def upgrade_topology(self):
+        pass
 
 ####################################################################################### display
 #######################################################################################
 
 class Network():
-    def __init__(self,topology):
+    def __init__(self,topology,simulation):
         #self.topology=Three_Tier_Topology()
         self.node_list=""
         self.topology=topology#)
+        self.simulation=simulation
         self.topology.draw_Network()
 
         #self.topology.create_network()
@@ -1004,19 +1138,30 @@ class Network():
 
     def display_instance(self,master,le):
         #master=Tk()
-        self.information_frame = Information_Frame(master,le)
-        self.network_frame = Network_Frame(master, self.topology,self.information_frame)
-        self.node_frame=Node_Frame(master,self.network_frame)
+        self.information_frame = Information_Frame(master,le,self.simulation,self.topology)
+        self.network_frame = Network_Frame(master, self.topology,self.information_frame,self.simulation)
+        self.information_frame.network_frame=self.network_frame
+        self.node_frame=Node_Frame(master,self.network_frame,self.simulation)
 
         self.information_frame.load_frame()
         self.network_frame.show_topology_on_frame()
         self.network_frame.node_numbers = self.topology.graph.number_of_nodes()
         self.node_frame.create_window_pane_for_network_node_labels()
 
+    def equipment_creation_handler(self,topology,node_instance):
+        pass
+
+    def subequipment_creation_handler(self,topology,node_instance,subequipment_instance):
+        # noe_instance is equipment_instance
+        # on clicking the sub equipment from cards list in information frame call this function
+        # call subequipment method to put the data to the equipment and equipment
+        pass
 
 
-class Node_Frame:
-    def __init__(self,master,network_frame):
+
+class Node_Frame():
+    def __init__(self,master,network_frame,simulation):
+        self.simulation=simulation
         self.master=master
         self.network_frame=network_frame
 
@@ -1033,7 +1178,8 @@ class Node_Frame:
         self.master.config(menu=nodemenubar)
 
 class Network_Frame():
-    def __init__(self,master,topology,information_frame):
+    def __init__(self,master,topology,information_frame,simulation):
+        self.simulation=simulation
         self.master=master
         self.information_frame=information_frame
         self.canvas=Canvas(master,height=canvas_height,width=20,bg="steelblue")
@@ -1053,6 +1199,7 @@ class Network_Frame():
 
         self.edge_entry_point_label_list=[]
 
+        self.node_click_tally=0
         #self.canvas_click_function()
 
         self.connecting_node_instance=""
@@ -1142,7 +1289,6 @@ class Network_Frame():
         self.network_edge_labels[(new_node_instance,self.connecting_node_instance)]=edge_label
         new_node_instance.network_edge_labels_list.append(edge_label)
         self.connecting_node_instance.network_edge_labels_list.append(edge_label)
-
         self.connecting_node_instance=""
 
 
@@ -1208,98 +1354,82 @@ class Network_Frame():
 
         if name=="Cl":
             node=Client_Node(self.topology.node_numbers)
-            self.topology.node_numbers+=1
             self.canvas_coords=coords
             #client
         elif name=="S":
             node= Server(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords=coords
             #Server
         elif name=="Acc":
             node=Access_Node(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
             #Access_Network_Node
             #Access_Network_Node
         elif name=="M":
             node=Metro(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
             #Metro_Network_Node
         elif name=="CN":
             node=Core(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
             #Core_Network_Node
         elif name=="P":
             node=P_Node(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
             #P_Network_Node
         elif name=="CD":
             node=Core_Node(self.topology.node_numbers,0)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
             #Core_DC_Node
         elif name=="Edg":
             node=Edge_Node(self.topology.node_numbers,0,0)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
             #Edge_DC_Node
 
         elif name=="Ag":
             node=Aggregation_Node(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         elif name=="Prb":
             node=Probe(self.topology.node_numbers)
-
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         elif name=="Cntrlr":
             node=Controller(self.topology.node_numbers)
-
-            self.topology.node_numbers += 1
+            node.start_controller(self.topology)
             self.canvas_coords = coords
 
         elif name=="WB":
             node=White_Box(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
         elif name=="Sw":
             node=Switch(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         elif name=="R":
             node=Router(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         elif name=="F":
             node=Firewall(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
         elif name=="Dci":
             node=DataCenter_Interconnect(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
         elif name=="G":
             node=Gateway(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
         elif name == "Agdc":
             node = Aggregation_DC_Node(self.topology.node_numbers)
-            self.topology.node_numbers += 1
             self.canvas_coords = coords
 
         else :
             print("node not identified")
             node=""
+            return ""
             #new node
+        self.topology.node_instance_dictionary_by_node_id[self.topology.node_numbers]=node
+        self.topology.node_numbers += 1
         return node
 
     def create_node_in_graph(self,node,attributes,coords):
@@ -1528,7 +1658,7 @@ class Display_Node():
         try:
             print("trace")
             print(coords,new_node_instance)
-            print("tr",type(self.connecting_node_instance),type(new_node_instance))
+            print("tr",type(self.connecting_node_instance),self.connecting_node_instance,type(new_node_instance),new_node_instance)
             if self.connecting_node_instance!="":
                 self.create_edge_between_drop_and_positioned_nodes(new_node_instance)
                 self.topology.add_edge_to_topology(new_node_instance,self.connecting_node_instance)
@@ -1596,8 +1726,35 @@ class Display_Node():
         self.information_frame.node_property_display.insert(END,str(current_node_instance.mac_address.mac_address))
         self.information_frame.node_property_display.insert(END,"\nIP Address")
         self.information_frame.node_property_display.insert(END,str(current_node_instance.ip_address.ip_address))
-
+        self.set_information_frame_node_entry_box_for_current_node_selection(current_node_instance)
         #self.information_frame.node_property_display.insert(END,)
+
+    def set_information_frame_node_entry_box_for_current_node_selection(self,current_node_instance):
+        if self.node_click_tally == 0:
+            self.information_frame.node_A.insert(END,current_node_instance.node_id)
+            self.node_click_tally+=1
+        elif self.node_click_tally==1 :
+            node_a=int(self.information_frame.node_A.get())
+            if node_a == current_node_instance.node_id:
+                self.node_click_tally=1
+            elif node_a != current_node_instance.node_id:
+                self.information_frame.node_B.delete(0,END)
+                self.information_frame.node_B.insert(END,current_node_instance.node_id)
+                self.node_click_tally=2
+
+        else:
+            node_b=int(self.information_frame.node_B.get())
+            node_a=int(self.information_frame.node_A.get())
+            if node_a==node_b:
+                self.information_frame.node_B.delete(0,END)
+                self.node_click_tally=1
+            else:
+                self.information_frame.node_A.delete(0,END)
+                self.information_frame.node_B.delete(0,END)
+                self.information_frame.node_A.insert(0,node_b)
+                self.information_frame.node_B.insert(0,current_node_instance.node_id)
+
+
 
     def set_node_property_by_entry(self,event,current_node_instance,window1,window2):
         node_property = self.node_entry.get()
@@ -1818,46 +1975,62 @@ class Node_Movements():
 
 
 class Information_Frame():
-    def __init__(self,master,le):
+    def __init__(self,master,le,simulation,topology):
+        self.simulation=simulation
         self.frame=Frame(master,height=1000,width=300,bg="grey")
         self.frame.pack(side=RIGHT)
         self.ne=le.ne
+        self.topology=topology
 
 ##############
 
 
         #self.information_of_action=Entry(self.frame)
 
-        self.node_property_display = Text(self.frame, height=5)
-        self.node_property_display.grid(row=0, column=0, columnspan=3)
+        self.node_property_display = Text(self.frame,width=20, height=5)
+        self.node_property_display.grid(row=0, column=0, columnspan=3,sticky=N+E+W+S,padx=1,pady=1)
         self.node_property_display.insert(1.0,"text box")
-
-        self.shortest_path_label = Label(self.frame, text="Shortest Path")
-        #self.shortest_path_label.pack(side=TOP)
-        self.shortest_path_label.grid(row=1,column=0,sticky=N+E+S+W)
+        self.two_node_simulation_button=Button(self.frame,bg="blue",text="Click to start traffic between nodes A and B",command= lambda : self.simulation.start_ip_traffic_between_two_nodes(self,self.topology))
+        self.all_node_simulation_button=Button(self.frame,bg="blue",text="Click to start traffic beteen all nodes",command=lambda : self.simulation.start_all_nodes_ip_traffic(self,topology))
+        self.first_node_label=Label(self.frame,text="Node A")
+        self.second_node_label=Label(self.frame,text="Node B")
+        self.node_A=Entry(self.frame)
+        self.node_B=Entry(self.frame)
+        self.shortest_path_button = Button(self.frame, bg="blue",text="Shortest Path",command=self.shortest_path)
+        #self.shortest_path_button.pack(side=TOP)
+        self.two_node_simulation_button.grid(row=5,column=0,columnspan=3,sticky=N+W+E)
+        self.all_node_simulation_button.grid(row=6,column=0,columnspan=3,sticky=N+W+E)
+        self.first_node_label.grid(row=1,column=0,sticky=N+W+S+E)
+        self.node_A.grid(row=1,column=1,columnspan=2,sticky=N+E+W+S)
+        self.second_node_label.grid(row=2,column=0,sticky=N+W+S+E)
+        self.node_B.grid(row=2, column=1, columnspan=2,sticky=N+E+W+S)
+        row_span=4
+        self.shortest_path_button.grid(row=4,column=0,sticky=N+E+S+W)
         self.shortest_path_box = Entry(self.frame)
         #self.shortest_path_box.pack(side=TOP)
-        self.shortest_path_box.grid(row=1,column=1,columnspan=2,sticky=N+E+S+W)
+        self.shortest_path_box.grid(row=4,column=1,columnspan=2,sticky=N+E+S+W)
         #self.information_of_action.pack(side=TOP)
 
-        self.node_entry_label=Label(self.frame,text="Selected Node Attributes")
+        self.node_entry_label=Label(self.frame,text="Node Attributes")
         self.node_entry_box=Entry(self.frame)
         #self.node_entry_box.pack(side=TOP)
-        self.node_entry_label.grid(row=2,column=0,sticky=N+E+S+W)
-        self.node_entry_box.grid(row=2,column=1,columnspan=2,sticky=N+E+S+W)
+        self.node_entry_label.grid(row=3,column=0,sticky=N+E+S+W)
+        self.node_entry_box.grid(row=3,column=1,columnspan=2,sticky=N+E+S+W)
 
-        self.vendor_list_box = Listbox(self.frame, bd=5, exportselection=0, height=50, bg="skyblue1")
-        self.equipment_list_box = Listbox(self.frame, bd=5, exportselection=0, height=50, bg="skyblue3")
-        self.cards_list_box = Listbox(self.frame, bd=5, exportselection=0, height=50,bg="deepskyblue")
+        self.vendor_list_box = Listbox(self.frame, bd=5, exportselection=0,width=10, height=50, bg="skyblue1")
+        self.equipment_list_box = Listbox(self.frame, bd=5, exportselection=0,width=10, height=50, bg="skyblue3")
+        self.cards_list_box = Listbox(self.frame, bd=5, exportselection=0, width=10,height=15,bg="deepskyblue")
+        self.display_cards_properties_box=Text(self.frame,width=10,height=35)
         self.vendor_label=Label(self.frame, text="Vendor List")
         self.equipment_label=Label(self.frame,text="Equipment")
-        self.cards_label=Label(self.frame,text="Cards and Prop")
-        self.vendor_label.grid(row=3,column=0,pady=5)
-        self.equipment_label.grid(row=3,column=1,pady=5)
-        self.cards_label.grid(row=3,column=2,pady=5)
-        self.vendor_list_box.grid(row=4,column=0,rowspan=20,sticky=N+E+S+W,pady=1)
-        self.equipment_list_box.grid(row=4,column=1,rowspan=20,sticky=N+E+S+W,pady=1)
-        self.cards_list_box.grid(row=4,column=2,rowspan=20,sticky=N+E+S+W,pady=1)
+        self.cards_label=Label(self.frame,text="Subequipments")
+        self.vendor_label.grid(row=3+row_span,column=0,pady=5)
+        self.equipment_label.grid(row=3+row_span,column=1,pady=5)
+        self.cards_label.grid(row=3+row_span,column=2,pady=5)
+        self.vendor_list_box.grid(row=4+row_span,column=0,rowspan=20,sticky=N+E+S+W,pady=1)
+        self.equipment_list_box.grid(row=4+row_span,column=1,rowspan=20,sticky=N+E+S+W,pady=1)
+        self.cards_list_box.grid(row=4+row_span,column=2,rowspan=5,sticky=N+E+S+W,pady=1)
+        self.display_cards_properties_box.grid(row=9+row_span,column=2,rowspan=5,sticky=N+E+S+W,pady=1)
 
 
 
@@ -1865,7 +2038,7 @@ class Information_Frame():
         self.current_vendor_name = ""
         self.network_equipments_on_nodes = {}
         #self.load_frame()
-        # self.shortest_path_label.bind(<<)
+        # self.shortest_path_button.bind(<<)
 
         #vendor_label = Label(self.frame, text="Select Equipment for each node")
         #vendor_label.grid(row=2,column=0,columnspan=3,sticky=N+E+S+W)#pack()# dictionary of network equipment loaded per node
@@ -1873,8 +2046,20 @@ class Information_Frame():
         # self.test_text="rttt"
         # self.property_selection()
 
-    def shortest_path(self, node):
-        pass
+    def shortest_path(self):
+        print("shortest path ",self.node_A.get())
+        for key,value in self.topology.node_instance_dictionary_by_node_id.items():
+            print("key value is ",key,"\t",value)
+        node_instance_1=self.topology.node_instance_dictionary_by_node_id[int(self.node_A.get())]
+        node_instance_2=self.topology.node_instance_dictionary_by_node_id[int(self.node_B.get())]
+        shortest_path=self.topology.find_shortest_path(node_instance_1,node_instance_2)
+        self.set_shortest_path_box_window(shortest_path)
+
+    def set_shortest_path_box_window(self,shortest_path):
+        self.shortest_path_box.delete(0,END)
+        self.shortest_path_box.insert(END,str(shortest_path))
+
+
 
     def equipment_property_load(self, event):
         # print("function traced")
@@ -1883,23 +2068,33 @@ class Information_Frame():
         print("Equipment selected", equipment_name, "Equipment instance created for node", self.current_node)
         self.cards_list_box.delete(0,END)
         new_equipment = Equipment()
-        self.current_node.equipment_list.append(new_equipment)
+        self.current_node.subequipment_list.append(new_equipment)
         self.network_equipments_on_nodes[self.current_node] = new_equipment
         new_equipment.equipment_properties_dictionary = \
             self.ne.network_equipment_vendor_dictionary[self.current_vendor_name].equipment_dictionary[
                 equipment_name].equipment_properties_dictionary
+        self.cards_window_load(new_equipment)
 
+    def cards_window_load(self,new_equipment):
         if self.cards_list_box != "":
            self.cards_list_box.forget()
 
+        # insert various cards names. default are the values
+
+        #self.cards_list_box.insert(END,new_equipment.equipment_properties[interface_name])
+        self.cards_list_box.bind('<<ListboxSelect',self.load_cards_property_window_box)
         #self.cards_list_box = Listbox(self.frame, bd=5, exportselection=0, height=300)
-        for k, v in new_equipment.equipment_properties_dictionary.items():
+
+    def load_cards_property_window_box(self,event):
+        index = int(event.widget.curselection()[0])
+        new_subequipment = event.widget.get(index)
+        for k, v in new_subequipment.equipment_properties_dictionary.items():
             print("equipment ", k, v)
-            self.cards_list_box.insert(END, v)
+            self.cards_list_box.insert(END,k,v)
         #self.cards_list_box.pack(side=LEFT)
 
         # self.cards_list_box.delete(0,END)
-        for prop in new_equipment.equipment_properties_dictionary.values():
+        for prop in new_subequipment.equipment_properties_dictionary.values():
             print(prop)
             #    self.equipment_list_box.insert(END, prop)
 
@@ -1976,9 +2171,13 @@ class Information_Frame():
 
 
 le=Load_Network_Information()
+simulation=Simulation()
+#simulation.start_ip_simulation()
 print("network graph ",le.topology.graph)
-network=Network(le.topology)
+network=Network(le.topology,simulation)
 master=Tk()
 network.display_instance(master,le)
+#simulation.environment.run(until=100)
 master.mainloop()
+
 #network.
