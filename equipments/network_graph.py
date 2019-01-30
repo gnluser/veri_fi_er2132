@@ -1660,8 +1660,9 @@ class Display_Node():
             print(coords,new_node_instance)
             print("tr",type(self.connecting_node_instance),self.connecting_node_instance,type(new_node_instance),new_node_instance)
             if self.connecting_node_instance!="":
+                connecting_node_instance=self.connecting_node_instance
                 self.create_edge_between_drop_and_positioned_nodes(new_node_instance)
-                self.topology.add_edge_to_topology(new_node_instance,self.connecting_node_instance)
+                self.topology.add_edge_to_topology(new_node_instance,connecting_node_instance)
             else:
                 self.topology.add_nodes_to_topology(new_node_instance)
         except:
