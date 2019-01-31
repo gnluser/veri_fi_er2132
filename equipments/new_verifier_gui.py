@@ -35,6 +35,7 @@ line_cards_supported = "types of line cards supported"  # in the spreadsheet, li
 #interface_name = "Interface name"  # subequipment or card
 equipment_properties = [component_name, ports_per_cards, throughput, line_rate, line_cards, protocol,
                         layer_2, layer_3, usage]
+interface_name="Interface name"
 interfaces_supported = "Interfaces supported"
 mac_addresses_allotted = []
 ip_addresses_allotted = []
@@ -232,6 +233,7 @@ class Simulation():
     def create_simulation(self):
         self.environment.process(self.simulation_of_packet())
 
+
     def start_ip_traffic_between_two_nodes(self, information_frame, topology):
         # self.information_frame
         print("starting ip traffic")
@@ -244,6 +246,7 @@ class Simulation():
         self.max_time += self.environment.now
         self.environment.run(until=self.max_time)
         print("two nodes traffic completed suceessfully")
+
 
     def start_all_nodes_ip_traffic(self, information_frame, topology):
 
@@ -1120,7 +1123,7 @@ class Network():
         self.information_frame.network_frame = self.network_frame
         self.node_frame = Node_Frame(master, self.network_frame, self.simulation)
 
-        self.information_frame.load_frame()
+        #self.information_frame.load_frame()
         self.network_frame.show_topology_on_frame()
         self.network_frame.node_numbers = self.topology.graph.number_of_nodes()
         self.node_frame.create_window_pane_for_network_node_labels()
@@ -1243,9 +1246,12 @@ class Network_Frame():
                              self.node_clicked_on_canvas)  # lambda event: self.node_clicked(event)#, new_node_label,text_at_previous_node_place,x,y))
         self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
                              self.move_node)  # lambda event : self.move_node(event,new_node_label,text_at_previous_node_place,new_node_instance,attributes))
+        self.canvas.bind(new_node_label, "<Double-1>",
+                         lambda event: lambda event: self.information_frame.vendor_name_selection(event,new_node_label, node_instance,
+                                                                                    self.canvas))
         self.canvas.update()
 
-        self.information_frame.property_selection(self.node_numbers, node_instance)
+        #self.information_frame.vendor_name_selection(self.node_numbers, node_instance,self.canvas)
 
     def create_edge_between_drop_and_positioned_nodes(self, new_node_instance):
         # direction is left
@@ -1661,9 +1667,10 @@ class Display_Node():
                              self.node_clicked_on_canvas)  # lambda event: self.node_clicked(event)#, new_node_label,text_at_previous_node_place,x,y))
         self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
                              self.move_node)  # lambda event : self.move_node(event,new_node_label,text_at_previous_node_place,new_node_instance,attributes))
+        self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event:self.information_frame.vendor_name_selection(event,new_node_label, new_node_instance,self.canvas))
         self.canvas.update()
         # print("node jfnj")
-        self.information_frame.property_selection(self.node_numbers, new_node_instance)
+        #self.information_frame.vendor_name_selection(self.node_numbers, new_node_instance,self.canvas)
         # elf.node_entry.insert(0,node_property)
         # elf.node_entry.update()
 
@@ -1843,6 +1850,8 @@ class Node_Movements():
         # self.canvas.tag_bind(text, "<Button-1>", lambda event: self.node_tinkered(event, new_node_label,text,x,y))
         self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
                              self.move_node)  # lambda event : self.move_node(event,self.current_label,text.text,new_node_instance,attributes))
+        self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event: self.information_frame.vendor_name_selection(event,new_node_label, current_node_instance,
+                                                                                    self.canvas))
         self.move_edges(current_node_instance)
         self.canvas.update()
         # pass
@@ -1851,7 +1860,7 @@ class Node_Movements():
         print("creating edge entry point")
         x1, y1, x2, y2 = current_node_instance.canvas_coords
         # self.delete_all_edge_entry_labels()
-        current_node_instance.edge_entry_label = self.canvas.create_oval(x2 + 3, y2 + 3, x2 + 7, y2 + 7)
+        current_node_instance.edge_entry_label = self.canvas.create_oval(x2 + 3, y2 + 3, x2 + 8, y2 + 8)
         self.canvas.tag_bind(current_node_instance.edge_entry_label, "<ButtonRelease-1>",
                              lambda event: self.create_new_edge_between_existing_nodes(event, current_node_instance))
 
@@ -1942,6 +1951,10 @@ class Node_Movements():
         # self.canvas.delete(text_at_previous_node_place)
         # print(node)
 
+    def refresh_canvas_windows(self):
+        #self.information_frame.remove_canvas_window()
+        #self.information_frame.remove_canvas_window_objects(self.subequipment_list_box, self.subequipment_label)
+        self.information_frame.remove_canvas_window(self.canvas)
 
 class Information_Frame():
     def __init__(self, master, le, simulation, topology):
@@ -1950,11 +1963,6 @@ class Information_Frame():
         self.frame.pack(side=RIGHT)
         self.ne = le.ne
         self.topology = topology
-
-        ##############
-
-
-        # self.information_of_action=Entry(self.frame)
 
         self.node_property_display = Text(self.frame, width=20, height=5)
         self.node_property_display.grid(row=0, column=0, columnspan=3, sticky=N + E + W + S, padx=1, pady=1)
@@ -1987,36 +1995,74 @@ class Information_Frame():
 
         self.node_entry_label = Label(self.frame, text="Node Attributes")
         self.node_entry_box = Entry(self.frame)
-        # self.node_entry_box.pack(side=TOP)
+        # self.node_entry_box.pack(side=TOP)+
         self.node_entry_label.grid(row=3, column=0, sticky=N + E + S + W)
         self.node_entry_box.grid(row=3, column=1, columnspan=2, sticky=N + E + S + W)
 
-        self.vendor_list_box = Listbox(self.frame, bd=5, exportselection=0, width=10, height=50, bg="skyblue1")
-        self.equipment_list_box = Listbox(self.frame, bd=5, exportselection=0, width=10, height=50, bg="skyblue3")
-        self.cards_list_box = Listbox(self.frame, bd=5, exportselection=0, width=10, height=15, bg="deepskyblue")
-        self.display_cards_properties_box = Text(self.frame, width=10, height=35)
-        self.vendor_label = Label(self.frame, text="Vendor List")
-        self.equipment_label = Label(self.frame, text="Equipment")
-        self.cards_label = Label(self.frame, text="Subequipments")
-        self.vendor_label.grid(row=3 + row_span, column=0, pady=5)
-        self.equipment_label.grid(row=3 + row_span, column=1, pady=5)
-        self.cards_label.grid(row=3 + row_span, column=2, pady=5)
-        self.vendor_list_box.grid(row=4 + row_span, column=0, rowspan=20, sticky=N + E + S + W, pady=1)
-        self.equipment_list_box.grid(row=4 + row_span, column=1, rowspan=20, sticky=N + E + S + W, pady=1)
-        self.cards_list_box.grid(row=4 + row_span, column=2, rowspan=5, sticky=N + E + S + W, pady=1)
-        self.display_cards_properties_box.grid(row=9 + row_span, column=2, rowspan=5, sticky=N + E + S + W, pady=1)
+        self.display_properties_equipment_box= Text(self.frame,width=10,height=30)
+        self.display_properties_subequipment_box = Text(self.frame, width=10, height=35)
 
+        self.display_properties_equipment_box.grid(row=9+row_span,column=2,rowspan=5,sticky=N+E+W+S,pady=1)
+        self.display_properties_subequipment_box.grid(row=14 + row_span, column=2, rowspan=5, sticky=N + E + S + W, pady=1)
         self.current_node = ""
         self.current_vendor_name = ""
         self.network_equipments_on_nodes = {}
-        # self.load_frame()
-        # self.shortest_path_button.bind(<<)
 
-        # vendor_label = Label(self.frame, text="Select Equipment for each node")
-        # vendor_label.grid(row=2,column=0,columnspan=3,sticky=N+E+S+W)#pack()# dictionary of network equipment loaded per node
+    def create_canvas_window(self,x,y,canvas):#,node_id,list_box):
+        self.window_frame=Frame(canvas)
+        self.window_box_id=canvas.create_window(x-50,y,window=self.window_frame,height=300,width=100)
 
-        # self.test_text="rttt"
-        # self.property_selection()
+
+    def remove_canvas_window_objects(self,list_box,label):
+        list_box.destroy()
+        label.destroy()
+
+
+    def remove_canvas_window(self,canvas):#,list_box):
+        #self.remove_list_box(list_box)
+        canvas.delete(self.window_box_id)
+        self.window_frame.destroy()
+
+    def reset_subequipment_property_box(self):
+        self.display_properties_subequipment_box.delete(0,END)
+
+
+    def reset_equipment_property_box(self):
+        self.display_properties_equipment_box.delete(0,END)
+
+
+    def create_vendor_list_box(self,event,node_label,canvas):
+        self.create_canvas_window(event.x,event.y,canvas)#,node_label,self.vendor_list_box)
+        self.vendor_label = Label(self.window_frame, text="Vendor List")
+        self.vendor_list_box = Listbox(self.window_frame, bd=5, exportselection=0, width=10, height=50, bg="skyblue1")
+        self.vendor_label.pack()
+        self.vendor_list_box.pack()
+        self.vendor_list_box.bind('<<ListboxSelect>>', lambda event : self.equipment_load(event,canvas,event.x,event.y))
+
+    def create_equipment_list_box(self,canvas,x,y):#,node_label):
+        print("equipment list  box ")
+        #self.remove_canvas_window(canvas, self.vendor_list_box)
+        self.remove_canvas_window_objects(self.vendor_list_box,self.vendor_label)
+        #self.create_canvas_window(x,y,canvas)#, node_label, self.equipment_list_box)
+        self.equipment_label = Label(self.window_frame, text="Equipment")
+        self.equipment_list_box = Listbox(self.window_frame, bd=5, exportselection=0, width=10, height=50, bg="skyblue3")
+        self.equipment_list_box.pack()
+        self.equipment_list_box.pack()
+        self.equipment_list_box.bind("<<ListboxSelect>>",lambda event : self.equipment_property_load(event,canvas,x,y))
+
+    def create_subequipment_list_box(self,canvas,x,y):#,node_label):
+        #self.remove_canvas_window(canvas, self.equipment_list_box)
+        self.remove_canvas_window_objects(self.equipment_list_box,self.equipment_label)
+        #self.create_canvas_window(x,y,canvas)#,node_label,self.subequipment_list_box)
+        self.subequipment_list_box = Listbox(self.window_frame, bd=5, exportselection=0, width=10, height=15, bg="deepskyblue")
+        self.subequipment_label = Label(self.window_frame, text="Subequipments")
+        self.subequipment_label.pack()
+        self.subequipment_list_box.pack()
+        self.subequipment_list_box.bind('<<ListboxSelect>>', lambda event: self.load_cards_property_window_box(event,canvas))
+
+    def remove_list_box(self,list_box):
+        list_box.destroy()
+
 
     def shortest_path(self):
         print("shortest path ", self.node_A.get())
@@ -2031,87 +2077,93 @@ class Information_Frame():
         self.shortest_path_box.delete(0, END)
         self.shortest_path_box.insert(END, str(shortest_path))
 
-    def equipment_property_load(self, event):
+    def equipment_property_load(self, event,canvas,x,y):
         # print("function traced")
-        index = int(event.widget.curselection()[0])
-        equipment_name = event.widget.get(index)
+        widget=event.widget
+        index = int(widget.curselection()[0])
+        equipment_name = widget.get(index)
         print("Equipment selected", equipment_name, "Equipment instance created for node", self.current_node)
-        self.cards_list_box.delete(0, END)
+        try:
+            self.subequipment_list_box.delete(0, END)
+        except:
+            print("new subequipment list")
         new_equipment = Equipment()
         self.current_node.subequipment_list.append(new_equipment)
         self.network_equipments_on_nodes[self.current_node] = new_equipment
         new_equipment.equipment_properties_dictionary = \
             self.ne.network_equipment_vendor_dictionary[self.current_vendor_name].equipment_dictionary[
                 equipment_name].equipment_properties_dictionary
-        self.cards_window_load(new_equipment)
+        self.subequipment_window_load(new_equipment,canvas,x,y)
 
-    def cards_window_load(self, new_equipment):
-        if self.cards_list_box != "":
-            self.cards_list_box.forget()
+    def subequipment_window_load(self, new_equipment,canvas,x,y):
+        try:
+            self.subequipment_list_box.delete(0,END)
+        except:
+            print("not new subequipment box")
+        self.create_subequipment_list_box(canvas,x,y)
 
         # insert various cards names. default are the values
 
-        self.cards_list_box.insert(END, new_equipment.equipment_properties[interface_name])
-        self.cards_list_box.bind('<<ListboxSelect', self.load_cards_property_window_box)
-        # self.cards_list_box = Listbox(self.frame, bd=5, exportselection=0, height=300)
+        self.subequipment_list_box.insert(END, new_equipment.equipment_properties[interface_name])
 
-    def load_cards_property_window_box(self, event):
+
+    def load_cards_property_window_box(self, event,canvas):
+        #self.remove_canvas_window(canvas,self.subequipment_list_box)
         index = int(event.widget.curselection()[0])
         new_subequipment = event.widget.get(index)
         for k, v in new_subequipment.equipment_properties_dictionary.items():
             print("equipment ", k, v)
-            self.cards_list_box.insert(END, k, v)
-        # self.cards_list_box.pack(side=LEFT)
+            self.display_properties_subequipment_box.insert(END, k, v)
 
-        # self.cards_list_box.delete(0,END)
+        self.remove_canvas_window_objects(self.subequipment_list_box,self.subequipment_label)
+        self.remove_canvas_window(canvas)
+
         for prop in new_subequipment.equipment_properties_dictionary.values():
             print(prop)
-            #    self.equipment_list_box.insert(END, prop)
+
 
     def constraints_per_node(self, equipment, properties):
         pass
 
-    def equipment_load(self, event):
-        # print("venjgbnbfdjnlgkdmnlbfkn")
-        index = int(event.widget.curselection()[0])
-        self.equipment_list_box.delete(0, END)
-        self.current_vendor_name = event.widget.get(index)
-        print("current vendor", self.current_vendor_name)
-        # if self.equipment_list_box != "":
-        #    self.equipment_list_box.forget()
+    def equipment_load(self, event,canvas,x,y):
 
-        # self.equipment_list_box = Listbox(self.frame, bd=5, exportselection=0, height=300, bg="yellow")
+        widget=event.widget
+        index=int(widget.curselection()[0])
+        print("widget ",index)
+        self.current_vendor_name = widget.get(index)
+
+        self.create_equipment_list_box(canvas,x,y)
+        try:
+            self.equipment_list_box.delete(0, END)
+        except:
+            print("new equipment list")
+        print("Vendor is ", self.current_vendor_name)
         self.equipment_options = self.ne.calling_equipment_names(self.current_vendor_name)
         for items in self.equipment_options:
             print(items)
             self.equipment_list_box.insert(END, items)
-        self.equipment_list_box.bind('<<ListboxSelect>>', self.equipment_property_load)
-        # self.equipment_list_box.pack(side=LEFT)
-        # self.equipment_options = self.ne.calling_equipment_names(vendor_name)
-        # self.equipment_list_box.delete(0,END)
-        # for eq in self.equipment_options:
-        #    self.equipment_list_box.insert(END,eq)
 
+    '''
     def load_frame(self):
         self.vendor_options = []
         # test_option=[1,2,3,4,5]
         self.equipment_options = []
         self.cards_option = []
         # self.equipment_list_box = ""
-        # self.cards_list_box = ""
+        # self.subequipment_list_box = ""
         # self.vendor_list_box = Listbox(self.frame, bd=5, exportselection=0, height=300, bg="green")
         # self.equipment_list_box = Listbox(self.frame, bd=5, exportselection=0, height=300, bg="yellow")
-        # self.cards_list_box = Listbox(self.frame, bd=5, exportselection=0, height=300)
+        # self.subequipment_list_box = Listbox(self.frame, bd=5, exportselection=0, height=300)
         # self.vendor_list_box.pack(side=TOP)
-        self.vendor_list_box.bind('<<ListboxSelect>>', self.equipment_load)
+        
 
         # self.vendor_list_box.bind('<<ListboxSelect>>', self.equipment_property_load)
         # self.equipment_list_box.bind('<<ListboxSelect>>', self.equipment_property_load)
 
         # self.vendor_list_box.pack(side=LEFT)
         # self.equipment_list_box.pack(side=LEFT)
-        # self.cards_list_box.pack(side=LEFT)
-        # '''
+        # self.subequipment_list_box.pack(side=LEFT)
+        ''#'
         # vendor_default_name=StringVar()
         # equipment_default_name=StringVar()
         # cards_default_name=StringVar()
@@ -2126,18 +2178,25 @@ class Information_Frame():
 
         # self.equipment_option.pack()
         # self.cards_option.pack()
-        # '''
+        # '#''
+    '''
 
-    def property_selection(self, node_id, new_node_instance):
+    def vendor_name_selection(self,event, node_label, new_node_instance,canvas):
         self.vendor_options = self.ne.calling_vendor_names()
         self.current_node = new_node_instance
-        self.vendor_list_box.delete(0, END)
+        try:
+            self.vendor_list_box.delete(0, END)
+        except:
+            print("new object")
+        self.create_vendor_list_box(event,node_label,canvas)
         for ven in self.vendor_options:
             self.vendor_list_box.insert(END, ven)
             # print(self.vendor_options)
 
             ############
             # pass
+
+
 
 
 le = Load_Network_Information()
