@@ -710,6 +710,7 @@ class Node():
         self.queue_size = ""
         self.packet_queue = []  ## queuing packets instances
         self.subequipment_list = []
+        self.canvas_label_id=""
 
     def create_subequipment(self):
         # initialize only one subequipment by default
@@ -1219,6 +1220,15 @@ class Network_Frame():
             # elf.network_node_instances_labels[]#
             ####need to create links
 
+    def create_node_instance_label_on_canvas(self,node_instance):
+        a,b,c,d=node_instance.canvas_coords
+        # a and d are the required window
+        label=Label(self.canvas,text=node_instance.node_id)
+        node_instance.canvas_label_id=self.canvas.create_window(a+12,d+10,window=label,width=c-a,height=10)
+
+    def remove_node_instance_label_on_canvas(self,node_instance):
+        self.canvas.delete(node_instance.canvas_label_id)
+
     def create_node_in_display_from_topology(self, node_instance):
         coords = node_instance.canvas_coords
         name = node_instance.name
@@ -1229,6 +1239,8 @@ class Network_Frame():
         except:
             length = attributes["length"]
             new_node_label = self.canvas.create_rectangle(coords, fill=attributes["color"])
+
+        self.create_node_instance_label_on_canvas(node_instance)
 
         self.canvas.bind(new_node_label, "<Motion>", self.move_cursor_over_node)
 
@@ -1249,9 +1261,19 @@ class Network_Frame():
         self.canvas.bind(new_node_label, "<Double-1>",
                          lambda event: lambda event: self.information_frame.vendor_name_selection(event,new_node_label, node_instance,
                                                                                     self.canvas))
+        self.canvas.tag_bind(new_node_label, "<Button-3>>", lambda event: self.show_connecting_node_options(event,node_instance.canvas_coords))
         self.canvas.update()
 
         #self.information_frame.vendor_name_selection(self.node_numbers, node_instance,self.canvas)
+
+    def show_connecting_node_options(self,event,present_coords):
+        x1,y1,x2,y2=present_coords
+        listbox=Listbox(self.canvas)
+        window_label=self.canvas.create_window(x2,y2,window=listbox,width=100,height=200)
+        listbox.bind("<<ListboxSelect>>",self.connect_edge)
+        for label, node_instance in self.network_node_instances_labels.items():
+                listbox.insert(END,label)
+
 
     def create_edge_between_drop_and_positioned_nodes(self, new_node_instance):
         # direction is left
@@ -1632,6 +1654,9 @@ class Display_Node():
             new_node_label = self.canvas.create_rectangle(coords, fill=attributes["color"])
         # self.canvas.bind(new_node_label, "<Motion>", self.move_cursor_over_node)
 
+
+        self.create_node_instance_label_on_canvas(new_node_instance)
+
         try:
             print("trace")
             print(coords, new_node_instance)
@@ -1668,6 +1693,7 @@ class Display_Node():
         self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
                              self.move_node)  # lambda event : self.move_node(event,new_node_label,text_at_previous_node_place,new_node_instance,attributes))
         self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event:self.information_frame.vendor_name_selection(event,new_node_label, new_node_instance,self.canvas))
+        self.canvas.tag_bind(new_node_label,"<Button-3>>", lambda event:self.show_connecting_node_options(event,current_node_instance.canvas_coords))
         self.canvas.update()
         # print("node jfnj")
         #self.information_frame.vendor_name_selection(self.node_numbers, new_node_instance,self.canvas)
@@ -1805,6 +1831,8 @@ class Node_Movements():
         print("current label is ", self.current_label)
         node = self.node_label_dictionary[self.current_label]
         current_node_instance = self.network_node_instances_labels[self.current_label]
+
+        self.remove_node_instance_label_on_canvas(current_node_instance)
         self.network_node_instances_labels.pop(self.current_label)
 
         self.delete_edge_entry_labels(current_node_instance)
@@ -1831,6 +1859,8 @@ class Node_Movements():
             new_node_label = self.canvas.create_rectangle(coords, fill=attributes["color"])
         self.create_edge_entry_point(current_node_instance)
 
+        self.create_node_instance_label_on_canvas(current_node_instance)
+
         self.set_node_information_window_box(current_node_instance)
 
         # self.canvas.bind(new_node_label, "<Motion>", lambda event:self.move_cursor_over_node(event))
@@ -1852,6 +1882,7 @@ class Node_Movements():
                              self.move_node)  # lambda event : self.move_node(event,self.current_label,text.text,new_node_instance,attributes))
         self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event: self.information_frame.vendor_name_selection(event,new_node_label, current_node_instance,
                                                                                     self.canvas))
+        self.canvas.tag_bind(new_node_label, "<Button-3>>", lambda event: self.show_connecting_node_options(event,current_node_instance.canvas_coords))
         self.move_edges(current_node_instance)
         self.canvas.update()
         # pass
