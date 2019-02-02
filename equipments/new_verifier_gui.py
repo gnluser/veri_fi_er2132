@@ -389,6 +389,7 @@ class Load_Network_Information():
             if latitude[-1:] != "N":
                 node_height = -1 * node_height
             if longitude[-1:] != "E":
+
                 node_width = -1 * node_width
             node_height = node_height + height / 2
             node_width = node_width + width / 2
@@ -515,6 +516,7 @@ class Load_Network_Information():
             # new node
 
         self.topology.node_instance_dictionary_by_node_id[self.topology.node_numbers] = node
+
         self.topology.node_numbers += 1
         return node
 
@@ -710,7 +712,7 @@ class Node():
         self.queue_size = ""
         self.packet_queue = []  ## queuing packets instances
         self.subequipment_list = []
-        self.canvas_label_id=""
+        self.canvas_label_window_id=""
 
     def create_subequipment(self):
         # initialize only one subequipment by default
@@ -1119,8 +1121,9 @@ class Network():
 
     def display_instance(self, master, le):
         # master=Tk()
-        self.information_frame = Information_Frame(master, le, self.simulation, self.topology)
-        self.network_frame = Network_Frame(master, self.topology, self.information_frame, self.simulation)
+        self.network_frame = Network_Frame(master, self.topology, self.simulation)
+        self.information_frame = Information_Frame(self.network_frame.canvas,le, self.simulation, self.topology)
+        self.network_frame.information_frame=self.information_frame
         self.information_frame.network_frame = self.network_frame
         self.node_frame = Node_Frame(master, self.network_frame, self.simulation)
 
@@ -1164,10 +1167,10 @@ class Node_Frame():
 
 
 class Network_Frame():
-    def __init__(self, master, topology, information_frame, simulation):
+    def __init__(self, master, topology, simulation):
         self.simulation = simulation
         self.master = master
-        self.information_frame = information_frame
+        #self.information_frame = information_frame
         self.canvas = Canvas(master, height=canvas_height, width=20, bg="steelblue")
         self.canvas.pack(side=LEFT, expand=YES, fill=BOTH)
         self.frame = Frame(master, height=200, bg="orange")
@@ -1191,6 +1194,7 @@ class Network_Frame():
         self.connecting_node_instance = ""
         self.network_node_instances_labels = {}
 
+        #self.network_node_instance_by_node_id={}
         self.labels_generated_after_menu_node_type_selection = []
 
         # self.create_window_pane_for_network_node_labels()
@@ -1224,10 +1228,10 @@ class Network_Frame():
         a,b,c,d=node_instance.canvas_coords
         # a and d are the required window
         label=Label(self.canvas,text=node_instance.node_id)
-        node_instance.canvas_label_id=self.canvas.create_window(a+12,d+10,window=label,width=c-a,height=10)
+        node_instance.canvas_label_window_id=self.canvas.create_window(a+12,d+10,window=label,width=c-a,height=10)
 
-    def remove_node_instance_label_on_canvas(self,node_instance):
-        self.canvas.delete(node_instance.canvas_label_id)
+    def remove_node_label_window(self,node_instance):
+        self.canvas.delete(node_instance.canvas_label_window_id)
 
     def create_node_in_display_from_topology(self, node_instance):
         coords = node_instance.canvas_coords
@@ -1261,38 +1265,95 @@ class Network_Frame():
         self.canvas.bind(new_node_label, "<Double-1>",
                          lambda event: lambda event: self.information_frame.vendor_name_selection(event,new_node_label, node_instance,
                                                                                     self.canvas))
-        self.canvas.tag_bind(new_node_label, "<Button-3>>", lambda event: self.show_connecting_node_options(event,node_instance.canvas_coords))
+        self.canvas.tag_bind(new_node_label, "<Button-3>", lambda event: self.show_connecting_node_options(event,node_instance.canvas_coords,node_instance))
         self.canvas.update()
 
         #self.information_frame.vendor_name_selection(self.node_numbers, node_instance,self.canvas)
 
-    def show_connecting_node_options(self,event,present_coords):
+
+    def remove_edge_canvas_window(self):
+        try:
+            self.canvas.delete(self.window_for_edge_options)
+        except:
+            print("no edge option window present to be removed")
+
+    def remove_equipment_canvas_window(self,node_instance):
+        try:
+            self.information_frame.remove_canvas_window(self.canvas,node_instance)
+        except:
+            print("no equipment window present to be removed")
+
+
+
+
+    def remove_network_node_and_respective_components(self,node_instance):
+        #self.topology.graph.remove_node(node_instance)
+        self.delete_edge_entry_labels(node_instance)
+        self.remove_node_label_window(node_instance)
+        self.remove_equipment_canvas_window(node_instance)
+        self.remove_edge_canvas_window()
+        for connecting_node_instance in node_instance.connecting_node_instance_list:
+            try:
+                edge_label = self.network_edge_labels[(connecting_node_instance, node_instance)]
+                self.network_edge_labels.pop((connecting_node_instance, node_instance))
+            except:
+                edge_label = self.network_edge_labels[(node_instance, connecting_node_instance)]
+                self.network_edge_labels.pop((node_instance, connecting_node_instance))
+            self.canvas.delete(edge_label)
+        for label,instance in self.network_node_instances_labels.items():
+            if node_instance == instance:
+                self.network_node_instances_labels.pop(label)
+                self.canvas.delete(label)
+
+
+    def show_connecting_node_options(self,event,present_coords,node_instance):
         x1,y1,x2,y2=present_coords
-        listbox=Listbox(self.canvas)
-        window_label=self.canvas.create_window(x2,y2,window=listbox,width=100,height=200)
-        listbox.bind("<<ListboxSelect>>",self.connect_edge)
-        for label, node_instance in self.network_node_instances_labels.items():
-                listbox.insert(END,label)
+        small_frame=Frame(self.canvas)
+        button=Button(small_frame,text="Delete "+str(node_instance.node_id),command=lambda : self.remove_network_node_and_respective_components(node_instance))
+        listbox=Listbox(small_frame)
+        button.pack(side="top")
+        listbox.pack()
+        self.window_for_edge_options=self.canvas.create_window(x1+30,y2+100,window=small_frame,width=50,height=100)
+        listbox.bind("<<ListboxSelect>>",lambda event: self.connect_edge_to_respective_node(event,node_instance,self.window_for_edge_options))
+        for label, connecting_node_instance in self.network_node_instances_labels.items():
+            if connecting_node_instance not in node_instance.connecting_node_instance_list and connecting_node_instance != node_instance:
+                node_id=connecting_node_instance.node_id
+                listbox.insert(END,node_id)
+        #if len(self.network_node_instances_labels)==1 and
+
+
+    def connect_edge_to_respective_node(self,event,node_instance,window_label):
+        widget=event.widget
+        index=int(widget.curselection()[0])
+        connecting_node_id=widget.get(index)
+        connecting_node_instance=self.topology.node_instance_dictionary_by_node_id[connecting_node_id]
+        self.canvas.delete(window_label)
+        self.create_edge_between_two_nodes(node_instance,connecting_node_instance)
 
 
     def create_edge_between_drop_and_positioned_nodes(self, new_node_instance):
-        # direction is left
+        self.create_edge_between_two_nodes(new_node_instance,self.connecting_node_instance)
+        self.connecting_node_instance = ""
 
-        print("new edge created between ", new_node_instance.node_id, " ", self.connecting_node_instance.node_id)
-        coords1 = new_node_instance.canvas_coords
-        coords2 = self.connecting_node_instance.canvas_coords
 
+    def create_line(self,coords1,coords2):
         x1, y1 = coords1[2], int(coords1[1] + (coords1[3] - coords1[1]) * 0.8)
         x2, y2 = coords2[0], int(coords2[1] + (coords2[3] - coords2[1]) * 0.2)
-
         edge_label = self.canvas.create_line(x1, y1, x2, y2)
-        new_node_instance.connecting_node_instance_list.append(self.connecting_node_instance)
-        self.connecting_node_instance.connecting_node_instance_list.append(new_node_instance)
+        return edge_label
 
-        self.network_edge_labels[(new_node_instance, self.connecting_node_instance)] = edge_label
+    def create_edge_between_two_nodes(self,new_node_instance,connecting_node_instance):
+        print("new edge created between ", new_node_instance.node_id, " ", connecting_node_instance.node_id)
+        coords1 = new_node_instance.canvas_coords
+        coords2 = connecting_node_instance.canvas_coords
+        edge_label=self.create_line(coords1,coords2)
+        new_node_instance.connecting_node_instance_list.append(connecting_node_instance)
+        connecting_node_instance.connecting_node_instance_list.append(new_node_instance)
+
+        self.network_edge_labels[(new_node_instance, connecting_node_instance)] = edge_label
         new_node_instance.network_edge_labels_list.append(edge_label)
-        self.connecting_node_instance.network_edge_labels_list.append(edge_label)
-        self.connecting_node_instance=""
+        connecting_node_instance.network_edge_labels_list.append(edge_label)
+
 
     def identify_new_position_to_place_node(self, node_instance, list_of_labels, coords, direction):
         label = list_of_labels[0]
@@ -1425,6 +1486,7 @@ class Network_Frame():
             return ""
             # new node
         self.topology.node_instance_dictionary_by_node_id[self.topology.node_numbers] = node
+        #self.network_node_instance_by_node_id[self.topology.node_numbers] = node
         self.topology.node_numbers += 1
         return node
 
@@ -1693,7 +1755,7 @@ class Display_Node():
         self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
                              self.move_node)  # lambda event : self.move_node(event,new_node_label,text_at_previous_node_place,new_node_instance,attributes))
         self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event:self.information_frame.vendor_name_selection(event,new_node_label, new_node_instance,self.canvas))
-        self.canvas.tag_bind(new_node_label,"<Button-3>>", lambda event:self.show_connecting_node_options(event,current_node_instance.canvas_coords))
+        self.canvas.tag_bind(new_node_label,"<Button-3>", lambda event:self.show_connecting_node_options(event,current_node_instance.canvas_coords,new_node_instance))
         self.canvas.update()
         # print("node jfnj")
         #self.information_frame.vendor_name_selection(self.node_numbers, new_node_instance,self.canvas)
@@ -1703,16 +1765,7 @@ class Display_Node():
     def set_node_information_window_box(self, current_node_instance):
         self.set_information_frame_text_box_for_node_information(current_node_instance)
         node_property = "Enter node's\na)longitude, \nb)latitude, \nc)Ip_address, \nd)Number of ports \nseperated by spaces respectively"
-        self.label_entry = Label(self.canvas, text=node_property)
-        window1 = self.canvas.create_window(100, canvas_height - 500, window=self.label_entry, height=200, width=200)
-        self.entry_window.append(window1)
-        node_property = StringVar()
-        self.node_entry = Entry(self.canvas, textvariable=node_property)
-        window2 = self.canvas.create_window(100, canvas_height - 300, window=self.node_entry, height=200, width=200)
-        self.entry_window.append(window2)
-        self.node_entry.bind('<Key-Return>',
-                             lambda event: self.set_node_property_by_entry(event, current_node_instance, window1,
-                                                                           window2))
+        self.information_frame.set_node_property_from_input(node_property,current_node_instance)
 
     def set_information_frame_text_box_for_node_information(self, current_node_instance):
         self.reset_entries_and_labels()
@@ -1759,6 +1812,8 @@ class Display_Node():
                 self.information_frame.node_B.delete(0, END)
                 self.information_frame.node_A.insert(0, node_b)
                 self.information_frame.node_B.insert(0, current_node_instance.node_id)
+
+
 
     def set_node_property_by_entry(self, event, current_node_instance, window1, window2):
         node_property = self.node_entry.get()
@@ -1832,7 +1887,7 @@ class Node_Movements():
         node = self.node_label_dictionary[self.current_label]
         current_node_instance = self.network_node_instances_labels[self.current_label]
 
-        self.remove_node_instance_label_on_canvas(current_node_instance)
+        self.remove_node_label_window(current_node_instance)
         self.network_node_instances_labels.pop(self.current_label)
 
         self.delete_edge_entry_labels(current_node_instance)
@@ -1882,7 +1937,7 @@ class Node_Movements():
                              self.move_node)  # lambda event : self.move_node(event,self.current_label,text.text,new_node_instance,attributes))
         self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event: self.information_frame.vendor_name_selection(event,new_node_label, current_node_instance,
                                                                                     self.canvas))
-        self.canvas.tag_bind(new_node_label, "<Button-3>>", lambda event: self.show_connecting_node_options(event,current_node_instance.canvas_coords))
+        self.canvas.tag_bind(new_node_label, "<Button-3>", lambda event: self.show_connecting_node_options(event,current_node_instance.canvas_coords,current_node_instance))
         self.move_edges(current_node_instance)
         self.canvas.update()
         # pass
@@ -1988,60 +2043,91 @@ class Node_Movements():
         self.information_frame.remove_canvas_window(self.canvas)
 
 class Information_Frame():
-    def __init__(self, master, le, simulation, topology):
+    def __init__(self, canvas , le, simulation, topology):
         self.simulation = simulation
-        self.frame = Frame(master, height=1000, width=300, bg="grey")
-        self.frame.pack(side=RIGHT)
+        self.frame = Frame(canvas)#, bg="grey")
+        self.window_for_information_frame = canvas.create_window(125,600,window=self.frame,width=250,height=500)
+        #self.frame.pack(side=RIGHT)
         self.ne = le.ne
         self.topology = topology
 
-        self.node_property_display = Text(self.frame, width=20, height=5)
-        self.node_property_display.grid(row=0, column=0, columnspan=3, sticky=N + E + W + S, padx=1, pady=1)
-        self.node_property_display.insert(1.0, "text box")
-        self.two_node_simulation_button = Button(self.frame, bg="blue",
+        self.node_property_display = Text(self.frame,height=5,width=1 )
+        self.node_property_display.grid(row=0, column=0, columnspan=2,rowspan=3, sticky=N+S+E+W, padx=1, pady=1)
+        self.node_property_display.insert(1.0, "Node Attributes")
+        self.two_node_simulation_button = Button(self.frame, bg="grey",
                                                  text="Click to start traffic between nodes A and B",
                                                  command=lambda: self.simulation.start_ip_traffic_between_two_nodes(
                                                      self, self.topology))
-        self.all_node_simulation_button = Button(self.frame, bg="blue", text="Click to start traffic beteen all nodes",
+        self.all_node_simulation_button = Button(self.frame, bg="grey", text="Click to start traffic beteen all nodes",
                                                  command=lambda: self.simulation.start_all_nodes_ip_traffic(self,
                                                                                                             topology))
+        self.latitude_label = Label(self.frame,text="Latitude")
+        self.longitude_label = Label(self.frame,text="Longitude")
+        self.latitude_entry = Entry(self.frame)
+        self.longitude_entry = Entry(self.frame)
+        row_span=3
+        self.latitude_label.grid(row=row_span+1,column=0)
+        self.latitude_entry.grid(row=row_span+1,column=1)
+        self.longitude_label.grid(row=row_span+2,column=0)
+        self.longitude_entry.grid(row=row_span+2, column=1)
         self.first_node_label = Label(self.frame, text="Node A")
         self.second_node_label = Label(self.frame, text="Node B")
         self.node_A = Entry(self.frame)
         self.node_B = Entry(self.frame)
-        self.shortest_path_button = Button(self.frame, bg="blue", text="Shortest Path", command=self.shortest_path)
+        self.shortest_path_button = Button(self.frame, bg="grey", text="Shortest Path", command=self.shortest_path)
         # self.shortest_path_button.pack(side=TOP)
-        self.two_node_simulation_button.grid(row=5, column=0, columnspan=3, sticky=N + W + E)
-        self.all_node_simulation_button.grid(row=6, column=0, columnspan=3, sticky=N + W + E)
-        self.first_node_label.grid(row=1, column=0, sticky=N + W + S + E)
-        self.node_A.grid(row=1, column=1, columnspan=2, sticky=N + E + W + S)
-        self.second_node_label.grid(row=2, column=0, sticky=N + W + S + E)
-        self.node_B.grid(row=2, column=1, columnspan=2, sticky=N + E + W + S)
-        row_span = 4
-        self.shortest_path_button.grid(row=4, column=0, sticky=N + E + S + W)
+        self.two_node_simulation_button.grid(row=row_span+7, column=0, columnspan=1, sticky=W)
+        self.all_node_simulation_button.grid(row=row_span+8, column=0, columnspan=1, sticky=W)
+        self.first_node_label.grid(row=row_span+3, column=0, sticky=W)
+        self.node_A.grid(row=row_span+3, column=1, sticky=W)
+        self.second_node_label.grid(row=row_span+4, column=0, sticky=W)
+        self.node_B.grid(row=row_span+4, column=1, sticky=W)
+        row_span = 0
+        self.shortest_path_button.grid(row=row_span+6, column=0, sticky=W)
         self.shortest_path_box = Entry(self.frame)
         # self.shortest_path_box.pack(side=TOP)
-        self.shortest_path_box.grid(row=4, column=1, columnspan=2, sticky=N + E + S + W)
+        self.shortest_path_box.grid(row=row_span+6, column=1, sticky=W)
         # self.information_of_action.pack(side=TOP)
 
         self.node_entry_label = Label(self.frame, text="Node Attributes")
         self.node_entry_box = Entry(self.frame)
         # self.node_entry_box.pack(side=TOP)+
-        self.node_entry_label.grid(row=3, column=0, sticky=N + E + S + W)
-        self.node_entry_box.grid(row=3, column=1, columnspan=2, sticky=N + E + S + W)
+        self.node_entry_label.grid(row=row_span+5, column=0, sticky=W)
+        self.node_entry_box.grid(row=row_span+5, column=1,  sticky=W)
 
-        self.display_properties_equipment_box= Text(self.frame,width=10,height=30)
-        self.display_properties_subequipment_box = Text(self.frame, width=10, height=35)
-
-        self.display_properties_equipment_box.grid(row=9+row_span,column=2,rowspan=5,sticky=N+E+W+S,pady=1)
-        self.display_properties_subequipment_box.grid(row=14 + row_span, column=2, rowspan=5, sticky=N + E + S + W, pady=1)
+        self.display_equipment_label=Label(self.frame,text="Equipment Attributes")
+        self.display_subequipment_label=Label(self.frame,text="Subequipment Attributes")
+        self.display_properties_equipment_box= Text(self.frame)
+        self.display_properties_subequipment_box = Text(self.frame)
+        self.display_equipment_label.grid(row=row_span+9,column=0,columnspan=1,sticky=W,pady=1)
+        self.display_properties_equipment_box.grid(row=row_span+10,column=0,columnspan=1,rowspan=5,sticky=W,pady=1)
+        self.display_subequipment_label.grid(row=row_span+16,column=0,columnspan=1,sticky=W,pady=1)
+        self.display_properties_subequipment_box.grid(row=row_span+17, column=0,columnspan=1, rowspan=5, sticky=W, pady=1)
         self.current_node = ""
         self.current_vendor_name = ""
         self.network_equipments_on_nodes = {}
 
-    def create_canvas_window(self,x,y,canvas):#,node_id,list_box):
+
+    def set_node_property_from_input(self,node_property,current_node_instance):
+        pass
+        # "Enter node's\na)longitude, \nb)latitude, \nc)Ip_address, \nd)Number of ports \nseperated by spaces respectively"
+
+        #self.label_entry = Label(self.frame, text=node_property)
+        #window1 = self.canvas.create_window(100, canvas_height - 500, window=self.label_entry, height=200, width=200)
+        #self.entry_window.append(window1)
+        #node_property = StringVar()
+        #self.node_entry = Entry(self.canvas, textvariable=node_property)
+        #window2 = self.canvas.create_window(100, canvas_height - 300, window=self.node_entry, height=200, width=200)
+        #self.entry_window.append(window2)
+        #self.node_entry.bind('<Key-Return>',
+        #                             lambda event: self.set_node_property_by_entry(event, current_node_instance, window1,
+        #                                                                   window2))
+
+
+
+    def create_canvas_window(self,x,y,canvas,node_instance):#,node_id,list_box):
         self.window_frame=Frame(canvas)
-        self.window_box_id=canvas.create_window(x-50,y,window=self.window_frame,height=300,width=100)
+        self.window_box_id=canvas.create_window(x-100,y+50,window=self.window_frame,width=100,height=300)
 
 
     def remove_canvas_window_objects(self,list_box,label):
@@ -2049,7 +2135,7 @@ class Information_Frame():
         label.destroy()
 
 
-    def remove_canvas_window(self,canvas):#,list_box):
+    def remove_canvas_window(self,canvas,node_instance):#,list_box):
         #self.remove_list_box(list_box)
         canvas.delete(self.window_box_id)
         self.window_frame.destroy()
@@ -2062,15 +2148,15 @@ class Information_Frame():
         self.display_properties_equipment_box.delete(0,END)
 
 
-    def create_vendor_list_box(self,event,node_label,canvas):
-        self.create_canvas_window(event.x,event.y,canvas)#,node_label,self.vendor_list_box)
+    def create_vendor_list_box(self,event,node_label,canvas,node_instance):
+        self.create_canvas_window(event.x,event.y,canvas,node_instance)#,node_label,self.vendor_list_box)
         self.vendor_label = Label(self.window_frame, text="Vendor List")
         self.vendor_list_box = Listbox(self.window_frame, bd=5, exportselection=0, width=10, height=50, bg="skyblue1")
         self.vendor_label.pack()
         self.vendor_list_box.pack()
-        self.vendor_list_box.bind('<<ListboxSelect>>', lambda event : self.equipment_load(event,canvas,event.x,event.y))
+        self.vendor_list_box.bind('<<ListboxSelect>>', lambda event : self.equipment_load(event,canvas,event.x,event.y,node_instance))
 
-    def create_equipment_list_box(self,canvas,x,y):#,node_label):
+    def create_equipment_list_box(self,canvas,x,y,node_instance):#,node_label):
         print("equipment list  box ")
         #self.remove_canvas_window(canvas, self.vendor_list_box)
         self.remove_canvas_window_objects(self.vendor_list_box,self.vendor_label)
@@ -2079,9 +2165,9 @@ class Information_Frame():
         self.equipment_list_box = Listbox(self.window_frame, bd=5, exportselection=0, width=10, height=50, bg="skyblue3")
         self.equipment_list_box.pack()
         self.equipment_list_box.pack()
-        self.equipment_list_box.bind("<<ListboxSelect>>",lambda event : self.equipment_property_load(event,canvas,x,y))
+        self.equipment_list_box.bind("<<ListboxSelect>>",lambda event : self.equipment_property_load(event,canvas,x,y,node_instance))
 
-    def create_subequipment_list_box(self,canvas,x,y):#,node_label):
+    def create_subequipment_list_box(self,canvas,x,y,node_instance):#,node_label):
         #self.remove_canvas_window(canvas, self.equipment_list_box)
         self.remove_canvas_window_objects(self.equipment_list_box,self.equipment_label)
         #self.create_canvas_window(x,y,canvas)#,node_label,self.subequipment_list_box)
@@ -2089,7 +2175,7 @@ class Information_Frame():
         self.subequipment_label = Label(self.window_frame, text="Subequipments")
         self.subequipment_label.pack()
         self.subequipment_list_box.pack()
-        self.subequipment_list_box.bind('<<ListboxSelect>>', lambda event: self.load_cards_property_window_box(event,canvas))
+        self.subequipment_list_box.bind('<<ListboxSelect>>', lambda event: self.load_cards_property_window_box(event,canvas,node_instance))
 
     def remove_list_box(self,list_box):
         list_box.destroy()
@@ -2108,7 +2194,7 @@ class Information_Frame():
         self.shortest_path_box.delete(0, END)
         self.shortest_path_box.insert(END, str(shortest_path))
 
-    def equipment_property_load(self, event,canvas,x,y):
+    def equipment_property_load(self, event,canvas,x,y,node_instance):
         # print("function traced")
         widget=event.widget
         index = int(widget.curselection()[0])
@@ -2119,26 +2205,29 @@ class Information_Frame():
         except:
             print("new subequipment list")
         new_equipment = Equipment()
-        self.current_node.subequipment_list.append(new_equipment)
+        #self.current_node.subequipment_list.append(new_equipment)
         self.network_equipments_on_nodes[self.current_node] = new_equipment
         new_equipment.equipment_properties_dictionary = \
             self.ne.network_equipment_vendor_dictionary[self.current_vendor_name].equipment_dictionary[
                 equipment_name].equipment_properties_dictionary
-        self.subequipment_window_load(new_equipment,canvas,x,y)
+        self.subequipment_window_load(new_equipment,canvas,x,y,node_instance)
 
-    def subequipment_window_load(self, new_equipment,canvas,x,y):
+    def subequipment_window_load(self, new_equipment,canvas,x,y,node_instance):
         try:
             self.subequipment_list_box.delete(0,END)
         except:
             print("not new subequipment box")
-        self.create_subequipment_list_box(canvas,x,y)
+        self.create_subequipment_list_box(canvas,x,y,node_instance)
 
         # insert various cards names. default are the values
+        if new_equipment.equipment_properties[interface_name] == "":
+            for k,v in new_equipment.equipment_properties:
+                self.subequipment_list_box.insert(k,v)
+        else:
+            self.subequipment_list_box.insert(END, new_equipment.equipment_properties[interface_name])
 
-        self.subequipment_list_box.insert(END, new_equipment.equipment_properties[interface_name])
 
-
-    def load_cards_property_window_box(self, event,canvas):
+    def load_cards_property_window_box(self, event,canvas,node_instance):
         #self.remove_canvas_window(canvas,self.subequipment_list_box)
         index = int(event.widget.curselection()[0])
         new_subequipment = event.widget.get(index)
@@ -2147,7 +2236,7 @@ class Information_Frame():
             self.display_properties_subequipment_box.insert(END, k, v)
 
         self.remove_canvas_window_objects(self.subequipment_list_box,self.subequipment_label)
-        self.remove_canvas_window(canvas)
+        self.remove_canvas_window(canvas,node_instance)
 
         for prop in new_subequipment.equipment_properties_dictionary.values():
             print(prop)
@@ -2156,14 +2245,14 @@ class Information_Frame():
     def constraints_per_node(self, equipment, properties):
         pass
 
-    def equipment_load(self, event,canvas,x,y):
+    def equipment_load(self, event,canvas,x,y,node_instance):
 
         widget=event.widget
         index=int(widget.curselection()[0])
         print("widget ",index)
         self.current_vendor_name = widget.get(index)
 
-        self.create_equipment_list_box(canvas,x,y)
+        self.create_equipment_list_box(canvas,x,y,node_instance)
         try:
             self.equipment_list_box.delete(0, END)
         except:
@@ -2219,7 +2308,7 @@ class Information_Frame():
             self.vendor_list_box.delete(0, END)
         except:
             print("new object")
-        self.create_vendor_list_box(event,node_label,canvas)
+        self.create_vendor_list_box(event,node_label,canvas,new_node_instance)
         for ven in self.vendor_options:
             self.vendor_list_box.insert(END, ven)
             # print(self.vendor_options)
@@ -2236,6 +2325,8 @@ simulation = Simulation()
 print("network graph ", le.topology.graph)
 network = Network(le.topology, simulation)
 master = Tk()
+master.title("Verifier")
+master.minsize(500,500)
 network.display_instance(master, le)
 # simulation.environment.run(until=100)
 master.mainloop()
