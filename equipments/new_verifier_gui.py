@@ -15,13 +15,18 @@ try:
 except ImportError:
     from Tkinter import *
 
-data_file = "/home/gnl/Desktop/mankul/flask_project/sdnProject0.2/equipments.csv"
+data_file = "/home/gnl/Desktop/mankul/flask_project/sdnProject0.2/Network Equipments (Updated) - Sheet1.csv"#equipments.csv"
 current_deployed_topology_file = "current_topology.csv"  ### this file contain the current deployed topology
 #####3 dictionary is in format **** :" ", longitude=" ", latitude="  ",equipment_1=" ",equipment_2=" ", equipment_3=" "...##
 ### equipment subcategory is card type..
 ## cad type subcategory is interface type
-
-component_name = 'component name'
+component_series="Equipment series"
+component_name = "Equipment name"#'component name'
+subequipments_supported="subequipments/ports supported"
+subequipment_name="Subequipment"
+type_of_component="type of equipment/subequipment"
+number_of_subeqpmnt="number of interface cards"
+subeqpmnt_subpart="sub parts on subequipments"
 ports_per_cards = 'ports on cards/equipment'
 throughput = 'Throughput'
 line_rate = 'Mpps'
@@ -33,7 +38,7 @@ usage = 'usage'
 equipment_vendors = ['cisco', 'juniper', 'nokia', 'ciena', 'huawei', 'fujitsu']  # 'arista',
 line_cards_supported = "types of line cards supported"  # in the spreadsheet, line cards supported are seperated by ":"
 #interface_name = "Interface name"  # subequipment or card
-equipment_properties = [component_name, ports_per_cards, throughput, line_rate, line_cards, protocol,
+equipment_properties = [component_series,component_name,subequipments_supported, subequipment_name,type_of_component,subeqpmnt_subpart,ports_per_cards, throughput, line_rate, line_cards, protocol,
                         layer_2, layer_3, usage]
 interface_name="Interface name"
 interfaces_supported = "Interfaces supported"
@@ -542,48 +547,91 @@ class Network_Equipments:
 
         for items in self.dictionary_list:
             flag_for_vendor = False
-            # loading equipments for all known vendors.
+
             for vendor_name in equipment_vendors:
-                if vendor_name.lower() in (items[component_name]).lower():
+                if vendor_name.lower() in items[component_series].lower():
                     flag_for_vendor = True
                     if vendor_name not in self.network_equipment_vendor_dictionary:
-                        ####
-                        ####Creating new vendor instance for new vendor in list....... vendor instances are in nw_eq_vndr_lst
-                        ####
-                        vendor_instance = Equipments_per_Vendor()
-                        self.network_equipment_vendor_dictionary[vendor_name] = vendor_instance
+                        vendor_instance=Vendor()
+                        self.network_equipment_vendor_dictionary[vendor_name]=vendor_instance
                         self.per_vendors_equipments_list.append(vendor_instance)
 
                     else:
-                        ####
-                        ####adding new equipment in list information to vendor instance
-                        ####
                         vendor_instance = self.network_equipment_vendor_dictionary[vendor_name]
-                    # print(vendor_instance.func())
-                    if items[
-                        component_name] not in vendor_instance.equipment_names_list:  # to avoid reloading same properties if present in csv file
-                        vendor_instance.equipment_names_list.append(items[component_name])
-                        new_equipment = Equipment()
-                        try:
-                            sub_equipment_list = new_equipment.identify_all_subequipments()
-                            for sub_eq in sub_equipment_list:
-                                if sub_eq not in vendor_instance.subequipment_list:
-                                    vendor_instance.subequipment_list.append(sub_eq)
-                        except:
-                            print("no subequipments, only builtin components")
+            # loading equipments for all known vendors.
+            if items[component_name] != "":
+                #for vendor_name in equipment_vendors:
+                '''
+                    if vendor_name.lower() in (items[component_name]).lower():
+                        flag_for_vendor = True
+                        if vendor_name not in self.network_equipment_vendor_dictionary:
+                            ####
+                            ####Creating new vendor instance for new vendor in list....... vendor instances are in nw_eq_vndr_lst
+                            ####
+                            vendor_instance = Vendor()
+                            self.network_equipment_vendor_dictionary[vendor_name] = vendor_instance
+                            self.per_vendors_equipments_list.append(vendor_instance)
 
-                        new_equipment.equipment_properties(items)
-                        vendor_instance.equipment_dictionary[items[component_name]] = new_equipment
-                    else:
-                        # if items[component_name] not in vendor_instance.equipment_dictionary.keys():
-                        new_equipment = SubEquipment()  # Equipment()
-                        # vendor_instance.equipment_dictionary[items[card_name]]= new_equipment
-                        new_equipment.equipment_properties(items)
-                        vendor_instance.equipment_dictionary[items[component_name]] = new_equipment
-                        # print(vendor_instance.equipment_dictionary .values())
+                        else:
+                            ####
+                            ####adding new equipment in list information to vendor instance
+                            ####
+                            vendor_instance = self.network_equipment_vendor_dictionary[vendor_name]
+                        # print(vendor_instance.func())
+                '''
+                if items[component_name] not in vendor_instance.equipment_names_list:  # to avoid reloading same properties if present in csv file
+                    vendor_instance.equipment_names_list.append(items[component_name])
+                    new_equipment = Equipment()
+                    try:
+                        sub_equipment_list = new_equipment.identify_all_subequipments()
+                        #for sub_eq in sub_equipment_list:
+                        #    if sub_eq not in vendor_instance.subequipment_list:
+                        #        vendor_instance.subequipment_list.append(sub_eq)
+                    except:
+                        print("no subequipments, only builtin components")
 
-            if flag_for_vendor == False:
-                print("vendor name not identified for ", items[component_name])
+                    new_equipment.equipment_properties(items)
+                    vendor_instance.equipment_dictionary[items[component_name]] = new_equipment
+                '''
+                else:
+                    # if items[component_name] not in vendor_instance.equipment_dictionary.keys():
+                    new_equipment = SubEquipment()  # Equipment()
+                    # vendor_instance.equipment_dictionary[items[card_name]]= new_equipment
+                    new_equipment.equipment_properties(items)
+                    vendor_instance.equipment_dictionary[items[component_name]] = new_equipment
+                    # print(vendor_instance.equipment_dictionary .values())
+               
+
+                if flag_for_vendor == False:
+                    print("vendor name not identified for ", items[component_name])
+                '''
+
+            elif items[subequipment_name] != "":
+                if items[subequipment_name] not in vendor_instance.subequipment_list:
+                    subequipment=SubEquipment()
+                    vendor_instance.subequipment_list.append(items[subequipment_name])
+                    vendor_instance.subequipment_dictionary[items[subequipment_name]]=subequipment
+                    subequipment.subequipment_properties(items)
+
+                    subequipment.subequipment_properties(items)
+                    try:
+                        subequipment.identify_all_subparts()
+                    except:
+                        print("only default ports on card")
+
+
+            elif items[subeqpmnt_subpart] != "":
+                if items[subeqpmnt_subpart] not in vendor_instance.subpart_list:
+                    subpart=Subpart()
+                    vendor_instance.subpart_list.append(items[subeqpmnt_subpart])
+                    vendor_instance.subpart_dictionary[items[subeqpmnt_subpart]]=subpart
+                    subpart.subpart_properties(items)
+
+            else:
+                print("Empty line")
+
+
+
 
     def calling_vendor_names(self):
         # forwarding json  file to app to gorward it to the web page
@@ -595,20 +643,31 @@ class Network_Equipments:
 
 ###each time new instance created, vendor instance is added to network_equipment_vendor_dictionary dictionary of ne
 
-class Equipments_per_Vendor:
+class Vendor():
     # equipment_dictionary={}
     # component_property={}
     def __init__(self):
+        self.equipment_series_list=[]
         self.equipment_dictionary = {}
         self.component_list = {}
         self.component_properties_list = []
         self.equipment_names_list = []
-        self.subequipment_list = []  # use this sub equipment list to put the sub equipments to the equipment to be selected
+        self.subequipment_list = []
+        self.subpart_dictionary={}
+        self.subpart_list=[]
+        self.subequipment_dictionary={}
+        # use this sub equipment list to put the sub equipments to the equipment to be selected
         # print("equipment per vendor created")
 
     def returning_equipment_names(self):
         print("returning equipment names for specific vendor")
         return self.equipment_names_list
+
+
+
+class Equipment_Series():
+    def __init__(self):
+        self.parts_list=[]
 
 
 class Equipment():
@@ -640,7 +699,8 @@ class Equipment():
     def identify_all_subequipments(self):
         try:
 
-            self.subequipments_list_function(self.equipment_properties_dictionary[line_cards])
+            #self.subequipments_list_function(self.equipment_properties_dictionary[line_cards])
+            self.subequipments_list_function(self.equipment_properties_dictionary[subequipments_supported])
             return self.subequipment_list
 
         except:
@@ -650,9 +710,10 @@ class Equipment():
     def set_equipment_properties(self, items):
         pass
 
-    def subequipments_list_function(self, line_cards):
+    def subequipments_list_function(self, subequipments):
         subequipment_list = []
-        for words in line_cards.split(","):
+        delimeter=[",","+","\t","\n"]
+        for words in subequipments.split("\n"):
             subequipment_list.append(words)
         # return subequipment_list
         ##### filling the subequipment_list for use while creating the device
@@ -667,14 +728,68 @@ class Equipment():
 
 
 
+class Subpart():
+    def __init__(self):
+        self.name=""
+        self.id=""
+        self.port_instance_list=[]
+        self.subpart_properties_dictionary={}
+
+    def subpart_properties(self, items):
+        for element in items:
+            self.subpart_properties_dictionary[element] = items[element]
+
 class SubEquipment(Equipment):
     def __init__(self):
         Equipment.__init__(self)
         self.name = ""
         self.id = ""
         self.port_instance_list = []
+        self.subpart_instance_list=[]
+        self.subparts_list=[]
+        #self.subparts_dictionary={}
+        self.subequipment_properties_dictionary={}
 
-    def set_subequipment(self, subequipment_items, topology, node_instance):
+
+    def subequipment_properties(self, items):
+        for element in items:
+            self.subequipment_properties_dictionary[element] = items[element]
+        #try:
+        #    if items[interface_name] == "":
+        #        self.equipment_properties_dictionary[interface_name] = 'Default'
+        #except:
+        #    print("include interface name in csv file")
+
+    def identify_all_ports(self):
+        try:
+            self.equipment_properties_dictionary[ports_per_cards]
+        except:
+            print("Selected equipment has not mentioned number and types of ports in respective datasheet")
+
+    def identify_all_subparts(self):
+        try:
+
+            #self.subequipments_list_function(self.equipment_properties_dictionary[line_cards])
+            self.subparts_list_function(self.subequipment_properties_dictionary[subequipments_supported])
+            #return self.subequipment_list
+
+        except:
+            print("no data for subparts")
+
+    def subparts_list_function(self,subparts):
+        subparts_list = []
+        delimeter = [",", "+", "\t", "\n"]
+        for words in subparts.split("\n"):
+            subparts_list.append(words)
+        # return subequipment_list
+        ##### filling the subequipment_list for use while creating the device
+        self.subparts_list = subparts_list
+        # for eq in words.split(":"):
+        # card=Card()
+        # card_list.append(card)
+
+
+def set_subequipment(self, subequipment_items, topology, node_instance):
         # ubequipment_items[ports] to be used
         ports_size_dictionary = {}
         ports_size_dictionary[1] = 5
@@ -1171,7 +1286,7 @@ class Network_Frame():
         self.simulation = simulation
         self.master = master
         #self.information_frame = information_frame
-        self.canvas = Canvas(master, height=canvas_height, width=20, bg="steelblue")
+        self.canvas = Canvas(master, height=canvas_height, width=20, bg="azure")#""thistle1")
         self.canvas.pack(side=LEFT, expand=YES, fill=BOTH)
         self.frame = Frame(master, height=200, bg="orange")
         self.frame.pack(side=RIGHT)
@@ -1263,15 +1378,19 @@ class Network_Frame():
         self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
                              self.move_node)  # lambda event : self.move_node(event,new_node_label,text_at_previous_node_place,new_node_instance,attributes))
         self.canvas.bind(new_node_label, "<Double-1>",
-                         lambda event: lambda event: self.information_frame.vendor_name_selection(event,new_node_label, node_instance,
-                                                                                    self.canvas))
+                         lambda event: lambda event: self.create_equipment_selection_box(event,new_node_label, node_instance))
         self.canvas.tag_bind(new_node_label, "<Button-3>", lambda event: self.show_connecting_node_options(event,node_instance.canvas_coords,node_instance))
         self.canvas.update()
 
         #self.information_frame.vendor_name_selection(self.node_numbers, node_instance,self.canvas)
 
 
-    def remove_edge_canvas_window(self):
+    def create_equipment_selection_box(self,event,new_node_label, node_instance):
+        self.clear_all_boxes_on_canvas()
+        #self.clear_all_information_frame_boxes()
+        self.information_frame.vendor_name_selection(event, new_node_label, node_instance,self.canvas)
+
+    def remove_edge_option_canvas_window(self):
         try:
             self.canvas.delete(self.window_for_edge_options)
         except:
@@ -1279,9 +1398,11 @@ class Network_Frame():
 
     def remove_equipment_canvas_window(self,node_instance):
         try:
-            self.information_frame.remove_canvas_window(self.canvas,node_instance)
+            self.information_frame.remove_canvas_window(self.canvas)#,node_instance)
         except:
             print("no equipment window present to be removed")
+
+
 
 
 
@@ -1291,7 +1412,7 @@ class Network_Frame():
         self.delete_edge_entry_labels(node_instance)
         self.remove_node_label_window(node_instance)
         self.remove_equipment_canvas_window(node_instance)
-        self.remove_edge_canvas_window()
+        self.remove_edge_option_canvas_window()
         for connecting_node_instance in node_instance.connecting_node_instance_list:
             try:
                 edge_label = self.network_edge_labels[(connecting_node_instance, node_instance)]
@@ -1308,12 +1429,12 @@ class Network_Frame():
 
     def show_connecting_node_options(self,event,present_coords,node_instance):
         x1,y1,x2,y2=present_coords
-        small_frame=Frame(self.canvas)
-        button=Button(small_frame,text="Delete "+str(node_instance.node_id),command=lambda : self.remove_network_node_and_respective_components(node_instance))
-        listbox=Listbox(small_frame)
+        self.node_connection_options_frame=Frame(self.canvas)
+        button=Button(self.node_connection_options_frame,text="Delete "+str(node_instance.node_id),command=lambda : self.remove_network_node_and_respective_components(node_instance))
+        listbox=Listbox(self.node_connection_options_frame)
         button.pack(side="top")
         listbox.pack()
-        self.window_for_edge_options=self.canvas.create_window(x1+30,y2+100,window=small_frame,width=50,height=100)
+        self.window_for_edge_options=self.canvas.create_window(x1+30,y2+100,window=self.node_connection_options_frame,width=50,height=100)
         listbox.bind("<<ListboxSelect>>",lambda event: self.connect_edge_to_respective_node(event,node_instance,self.window_for_edge_options))
         for label, connecting_node_instance in self.network_node_instances_labels.items():
             if connecting_node_instance not in node_instance.connecting_node_instance_list and connecting_node_instance != node_instance:
@@ -1540,11 +1661,13 @@ class Network_Frame():
 
     def create_node_label_image(self, node_type_dictionary):
         a = b = 50
+        label_color="DarkOliveGreen1"
+        node_label_color="SandyBrown"
         print("creating the drag and drop part")
         x = 100
         y = 20
         width = 20
-        label = Label(self.canvas, text="Drag and Drop the node", width=30)
+        label = Label(self.canvas, text="Drag and Drop the node", width=30,bg=label_color)
         window_label = self.canvas.create_window(x, y, window=label, height=width, width=200)
         # label.place(x=20,y=20)
 
@@ -1557,7 +1680,7 @@ class Network_Frame():
             # print(node,attributes)
             try:
                 radius = int(attributes["radius"])
-                label = Label(self.canvas, text=node, width=width)
+                label = Label(self.canvas, text=node, width=width,bg=node_label_color)
                 window_label = self.canvas.create_window(x, y, window=label, height=width, width=200)
                 # label.place(x=a, y=b)
                 coords = a + displacement, b, a + displacement + 20, b + 20
@@ -1567,7 +1690,7 @@ class Network_Frame():
             except:
                 length = int(attributes["length"])
                 breadth = int(attributes["breadth"])
-                label = Label(self.canvas, text=node, width=width)
+                label = Label(self.canvas, text=node, width=width,bg=node_label_color)
                 window_label = self.canvas.create_window(x, y, window=label, height=width, width=200)
                 # label.place(x=a, y=b)
                 coords = a + displacement, b, a + displacement + 20, b + 20
@@ -1606,7 +1729,25 @@ class Network_Frame():
     def create_links(self):
         pass
 
+
+    def clear_all_boxes_on_canvas(self):
+        try:
+            self.information_frame.remove_canvas_window(self.canvas)
+        except:
+            print("\n")
+
+
+    def clear_all_information_frame_boxes(self):
+        for entry in self.information_frame.all_entries_list:
+            entry.delete(0,END)
+
+
     def node_clicked(self, event):
+
+        self.reset_entries_and_labels()
+        self.clear_all_boxes_on_canvas()
+        self.clear_all_information_frame_boxes()
+        self.remove_edge_option_canvas_window()
         x, y = event.x, event.y
         item = self.canvas.find_closest(x, y)
         # return  item[0]
@@ -1641,6 +1782,9 @@ class Network_Frame():
     def node_clicked_on_canvas(self, event):
         # self.delete_all_edge_entry_labels()
         self.reset_entries_and_labels()
+        self.clear_all_boxes_on_canvas()
+        self.clear_all_information_frame_boxes()
+        self.remove_edge_option_canvas_window()
         x, y = event.x, event.y
         item = self.canvas.find_closest(x, y)
         # return  item[0]
@@ -1754,7 +1898,7 @@ class Display_Node():
                              self.node_clicked_on_canvas)  # lambda event: self.node_clicked(event)#, new_node_label,text_at_previous_node_place,x,y))
         self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
                              self.move_node)  # lambda event : self.move_node(event,new_node_label,text_at_previous_node_place,new_node_instance,attributes))
-        self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event:self.information_frame.vendor_name_selection(event,new_node_label, new_node_instance,self.canvas))
+        self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event:self.create_equipment_selection_box(event,new_node_label, new_node_instance))
         self.canvas.tag_bind(new_node_label,"<Button-3>", lambda event:self.show_connecting_node_options(event,current_node_instance.canvas_coords,new_node_instance))
         self.canvas.update()
         # print("node jfnj")
@@ -1771,22 +1915,57 @@ class Display_Node():
         self.reset_entries_and_labels()
         self.display_information_frame_text_box_for_node_information(current_node_instance)
 
+
+
     def display_information_frame_text_box_for_node_information(self, current_node_instance):
-        self.information_frame.node_property_display.delete(1.0, END)
-        self.information_frame.node_property_display.insert(END, "Node Name ")
-        self.information_frame.node_property_display.insert(END, current_node_instance.type)
-        self.information_frame.node_property_display.insert(END, "\nNode ID ")
-        self.information_frame.node_property_display.insert(END, current_node_instance.node_id)
-        self.information_frame.node_property_display.insert(END, "\nLatitude ")
-        self.information_frame.node_property_display.insert(END, str(current_node_instance.latitude))
-        self.information_frame.node_property_display.insert(END, "\nLongitude ")
-        self.information_frame.node_property_display.insert(END, str(current_node_instance.longitude))
-        self.information_frame.node_property_display.insert(END, "\nMAC Address")
-        self.information_frame.node_property_display.insert(END, str(current_node_instance.mac_address.mac_address))
-        self.information_frame.node_property_display.insert(END, "\nIP Address")
-        self.information_frame.node_property_display.insert(END, str(current_node_instance.ip_address.ip_address))
+        self.clear_all_information_frame_boxes()
+        #self.information_frame.node_name_entry.delete(1.0, END)
+        #self.information_frame.node_id_entry.delete(1.0, END)
+        #self.information_frame.mac_address_entry.delete(1.0, END)
+        #self.information_frame.ip_address_entry.delete(1.0, END)
+        #self.information_frame.longitude_entry.delete(1.0, END)
+        #self.information_frame.latitude_entry.delete(1.0, END)
+        #self.information_frame.node_name_entry.insert(END, "Node Name\t")
+        self.information_frame.node_name_entry.insert(END, current_node_instance.type)
+        #self.information_frame.node_property_display.insert(END, "\nNode ID\t")
+        self.information_frame.node_id_entry.insert(END, current_node_instance.node_id)
+        #self.information_frame.node_property_display.insert(END, "\nLatitude\t")
+        self.information_frame.latitude_entry.insert(END, str(current_node_instance.latitude))
+        #self.information_frame.node_property_display.insert(END, "\nLongitude\t")
+        self.information_frame.longitude_entry.insert(END, str(current_node_instance.longitude))
+        #self.information_frame.node_property_display.insert(END, "\nMAC Address\t")
+        self.information_frame.mac_address_entry.insert(END, str(self.binary_to_hexa(current_node_instance.mac_address.mac_address)))
+        #self.information_frame.node_property_display.insert(END, "\nIP Address\t")
+        self.information_frame.ip_address_entry.insert(END, str(self.binary_to_ip_address(current_node_instance.ip_address.ip_address)))
         self.set_information_frame_node_entry_box_for_current_node_selection(current_node_instance)
         # self.information_frame.node_property_display.insert(END,)
+
+    def binary_to_ip_address(self,binary_string):
+        ip_address=""
+        for i in range(0,len(binary_string),8):
+            octet=0
+            for j in range(8):
+                octet=int(binary_string[i+j])*pow(2,7-j) + octet
+                octet=int(octet)
+            print(octet)
+            ip_address += str(octet)
+            if(i+8 < len(binary_string)):
+                ip_address+="."
+        return ip_address
+
+    def binary_to_hexa(self,binary_string):
+        dec_to_hex={10:'A',11:"B",12:"C",13:"D",14:"E",15:"F"}
+        mac_address=""
+        for i in range(0,len(binary_string),4):
+            dec=0
+            for j in range(4):
+                dec=int(int(binary_string[i+j])*pow(2,j)+dec)
+            if dec>10:
+                dec=dec_to_hex[dec]
+            else:
+                dec=str(dec)
+            mac_address+=dec
+        return mac_address
 
     def set_information_frame_node_entry_box_for_current_node_selection(self, current_node_instance):
         if self.node_click_tally == 0:
@@ -1882,6 +2061,9 @@ class Node_Movements():
 
     def move_node(self, event):  # ,new_node_label,text,new_node_instance,attributes):
         self.reset_entries_and_labels()
+        self.clear_all_information_frame_boxes()
+        #self.clear_all_boxes_on_canvas()
+
         print("move node method")
         print("current label is ", self.current_label)
         node = self.node_label_dictionary[self.current_label]
@@ -1935,8 +2117,8 @@ class Node_Movements():
         # self.canvas.tag_bind(text, "<Button-1>", lambda event: self.node_tinkered(event, new_node_label,text,x,y))
         self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
                              self.move_node)  # lambda event : self.move_node(event,self.current_label,text.text,new_node_instance,attributes))
-        self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event: self.information_frame.vendor_name_selection(event,new_node_label, current_node_instance,
-                                                                                    self.canvas))
+        self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event: self.create_equipment_selection_box(event,new_node_label, current_node_instance))
+
         self.canvas.tag_bind(new_node_label, "<Button-3>", lambda event: self.show_connecting_node_options(event,current_node_instance.canvas_coords,current_node_instance))
         self.move_edges(current_node_instance)
         self.canvas.update()
@@ -2045,64 +2227,106 @@ class Node_Movements():
 class Information_Frame():
     def __init__(self, canvas , le, simulation, topology):
         self.simulation = simulation
-        self.frame = Frame(canvas)#, bg="grey")
+        self.frame = Frame(canvas,padx=2,pady=2)#, bg="grey")
         self.window_for_information_frame = canvas.create_window(125,600,window=self.frame,width=250,height=500)
         #self.frame.pack(side=RIGHT)
         self.ne = le.ne
         self.topology = topology
-
-        self.node_property_display = Text(self.frame,height=5,width=1 )
-        self.node_property_display.grid(row=0, column=0, columnspan=2,rowspan=3, sticky=N+S+E+W, padx=1, pady=1)
-        self.node_property_display.insert(1.0, "Node Attributes")
-        self.two_node_simulation_button = Button(self.frame, bg="grey",
-                                                 text="Click to start traffic between nodes A and B",
+        button_color="sienna1"#"thistle1"
+        label_color="khaki1"
+        text_bg_color="bisque2"
+        info_label_color="green2"
+        self.all_entries_list=[]
+        #self.node_property_display = Text(self.frame,height=5,width=1 ,bg=text_bg_color)
+        #self.node_property_display.grid(row=0, column=0, columnspan=2, sticky=N+S+E+W, padx=1, pady=1)
+        #self.node_property_display.insert(1.0, "Node Attributes")
+        self.two_node_simulation_button = Button(self.frame, bg=button_color,
+                                                 text="Start traffic between nodes A and B",
                                                  command=lambda: self.simulation.start_ip_traffic_between_two_nodes(
                                                      self, self.topology))
-        self.all_node_simulation_button = Button(self.frame, bg="grey", text="Click to start traffic beteen all nodes",
+        self.all_node_simulation_button = Button(self.frame, bg=button_color, text="Start traffic beteen all nodes",
                                                  command=lambda: self.simulation.start_all_nodes_ip_traffic(self,
                                                                                                             topology))
-        self.latitude_label = Label(self.frame,text="Latitude")
-        self.longitude_label = Label(self.frame,text="Longitude")
-        self.latitude_entry = Entry(self.frame)
-        self.longitude_entry = Entry(self.frame)
-        row_span=3
-        self.latitude_label.grid(row=row_span+1,column=0)
-        self.latitude_entry.grid(row=row_span+1,column=1)
-        self.longitude_label.grid(row=row_span+2,column=0)
-        self.longitude_entry.grid(row=row_span+2, column=1)
-        self.first_node_label = Label(self.frame, text="Node A")
-        self.second_node_label = Label(self.frame, text="Node B")
-        self.node_A = Entry(self.frame)
-        self.node_B = Entry(self.frame)
-        self.shortest_path_button = Button(self.frame, bg="grey", text="Shortest Path", command=self.shortest_path)
+        self.information_frame_label=Label(self.frame,text= "Node Info",bg=info_label_color)
+        self.information_frame_label.grid(row=0,column=0,columnspan=2,sticky=N+E+S+W)
+        row_span=0
+        self.node_name_label= Label(self.frame,text="Node Name",bg=label_color)
+        self.node_name_entry=Entry(self.frame,bg=text_bg_color)
+        self.all_entries_list.append(self.node_name_entry)
+        self.node_id_label= Label(self.frame,text="Node ID",bg=label_color)
+        self.node_id_entry= Entry(self.frame,bg=text_bg_color)
+        self.all_entries_list.append(self.node_id_entry)
+        self.mac_address_label=Label(self.frame,text="Mac Address",bg= label_color)
+        self.mac_address_entry=Entry(self.frame,bg=text_bg_color)
+        self.all_entries_list.append(self.mac_address_entry)
+        self.ip_address_label=Label(self.frame,text="IP Address",bg=label_color)
+        self.ip_address_entry=Entry(self.frame,bg=text_bg_color)
+        self.all_entries_list.append(self.ip_address_entry)
+        self.latitude_label = Label(self.frame,text="Latitude",bg=label_color)
+        self.longitude_label = Label(self.frame,text="Longitude",bg=label_color)
+        self.latitude_entry = Entry(self.frame,bg=text_bg_color)
+        self.longitude_entry = Entry(self.frame,bg=text_bg_color)
+        self.all_entries_list.append(self.latitude_entry)
+        self.all_entries_list.append(self.longitude_entry)
+        self.node_name_label.grid(row=row_span+1,column=0,sticky=N+E+S+W)
+        self.node_name_entry.grid(row=row_span+1,column=1,sticky=N+E+S+W)
+        self.node_id_label.grid(row=row_span+2,column=0,sticky=N+E+S+W)
+        self.node_id_entry.grid(row=row_span+2,column=1,sticky=N+E+S+W)
+        #self.all_entries_list.append(self.node_name_entry)
+        #self.all_entries_list.append(self.node_id_entry)
+        self.mac_address_label.grid(row=row_span+3,column=0,sticky=N+E+S+W)
+        self.mac_address_entry.grid(row=row_span+3,column=1,sticky=N+E+S+W)
+        self.ip_address_label.grid(row=row_span+4,column=0,sticky=N+E+S+W)
+        self.ip_address_entry.grid(row=row_span+4,column=1,sticky=N+E+S+W)
+
+        row_span+=4#3
+        self.latitude_label.grid(row=row_span+1,column=0,sticky=N+E+S+W)
+        self.latitude_entry.grid(row=row_span+1,column=1,sticky=N+E+S+W)
+        self.longitude_label.grid(row=row_span+2,column=0,sticky=N+E+S+W)
+        self.longitude_entry.grid(row=row_span+2, column=1,sticky=N+E+S+W)
+        self.first_node_label = Label(self.frame, text="Node A",bg=label_color)
+        self.second_node_label = Label(self.frame, text="Node B",bg=label_color)
+        self.node_A = Entry(self.frame,bg=text_bg_color)
+        self.node_B = Entry(self.frame,bg=text_bg_color)
+        self.shortest_path_box = Entry(self.frame, bg=text_bg_color)
+        #self.all_entries_list.append(self.node_A)
+        #self.all_entries_list.append(self.node_B)
+        self.network_prop_analysis_label=Label(self.frame,text="Probes and Analysis",bg=info_label_color)
+        self.shortest_path_button = Button(self.frame, bg=button_color, text="Shortest Path", command=self.shortest_path)
         # self.shortest_path_button.pack(side=TOP)
-        self.two_node_simulation_button.grid(row=row_span+7, column=0, columnspan=1, sticky=W)
-        self.all_node_simulation_button.grid(row=row_span+8, column=0, columnspan=1, sticky=W)
-        self.first_node_label.grid(row=row_span+3, column=0, sticky=W)
-        self.node_A.grid(row=row_span+3, column=1, sticky=W)
-        self.second_node_label.grid(row=row_span+4, column=0, sticky=W)
-        self.node_B.grid(row=row_span+4, column=1, sticky=W)
-        row_span = 0
-        self.shortest_path_button.grid(row=row_span+6, column=0, sticky=W)
-        self.shortest_path_box = Entry(self.frame)
+        self.first_node_label.grid(row=row_span+3, column=0, sticky=N+E+S+W)
+        self.node_A.grid(row=row_span+3, column=1, sticky=N+E+S+W)
+        self.second_node_label.grid(row=row_span+4, column=0, sticky=N+E+S+W)
+        self.node_B.grid(row=row_span+4, column=1, sticky=N+E+S+W)
+
+        self.network_prop_analysis_label.grid(row=row_span+6,column=0,columnspan=2,sticky=N+E+S+W)
+        self.shortest_path_button.grid(row=row_span+7, column=0, sticky=N+E+S+W)
+        self.shortest_path_box.grid(row=row_span + 7, column=1, sticky=N + E + S + W)
+        self.two_node_simulation_button.grid(row=row_span+8, column=0, columnspan=2, sticky=N+E+S+W)
+        self.all_node_simulation_button.grid(row=row_span+9, column=0, columnspan=2, sticky=N+E+S+W)
+
+        #self.all_entries_list.append(self.shortest_path_box)
         # self.shortest_path_box.pack(side=TOP)
-        self.shortest_path_box.grid(row=row_span+6, column=1, sticky=W)
+
         # self.information_of_action.pack(side=TOP)
 
-        self.node_entry_label = Label(self.frame, text="Node Attributes")
-        self.node_entry_box = Entry(self.frame)
+        self.node_entry_label = Label(self.frame, text="Node Attributes",bg=label_color)
+        self.node_entry_box = Entry(self.frame,bg=text_bg_color)
+        #self.all_entries_list.append(self.node_entry_box)
         # self.node_entry_box.pack(side=TOP)+
-        self.node_entry_label.grid(row=row_span+5, column=0, sticky=W)
-        self.node_entry_box.grid(row=row_span+5, column=1,  sticky=W)
+        self.node_entry_label.grid(row=row_span+5, column=0, sticky=N+E+S+W)
+        self.node_entry_box.grid(row=row_span+5, column=1,  sticky=N+E+S+W)
+
+        row_span+=9
 
         self.display_equipment_label=Label(self.frame,text="Equipment Attributes")
-        self.display_subequipment_label=Label(self.frame,text="Subequipment Attributes")
+        self.display_subequipment_label=Label(self.frame,text="Subequipment Attributes",bg=info_label_color)
         self.display_properties_equipment_box= Text(self.frame)
-        self.display_properties_subequipment_box = Text(self.frame)
-        self.display_equipment_label.grid(row=row_span+9,column=0,columnspan=1,sticky=W,pady=1)
-        self.display_properties_equipment_box.grid(row=row_span+10,column=0,columnspan=1,rowspan=5,sticky=W,pady=1)
-        self.display_subequipment_label.grid(row=row_span+16,column=0,columnspan=1,sticky=W,pady=1)
-        self.display_properties_subequipment_box.grid(row=row_span+17, column=0,columnspan=1, rowspan=5, sticky=W, pady=1)
+        self.display_properties_subequipment_box = Entry(self.frame,bg=text_bg_color)
+        #self.display_equipment_label.grid(row=row_span+9,column=0,columnspan=1,sticky=N+E+S+W,pady=1)
+        #self.display_properties_equipment_box.grid(row=row_span+1,column=0,columnspan=1,rowspan=5,sticky=N+E+S+W,pady=1)
+        self.display_subequipment_label.grid(row=row_span+1,column=0,columnspan=2,sticky=N+E+S+W,pady=1)
+        self.display_properties_subequipment_box.grid(row=row_span+2, column=0,columnspan=2, rowspan=1, sticky=N+E+S+W, pady=1)
         self.current_node = ""
         self.current_vendor_name = ""
         self.network_equipments_on_nodes = {}
@@ -2135,7 +2359,7 @@ class Information_Frame():
         label.destroy()
 
 
-    def remove_canvas_window(self,canvas,node_instance):#,list_box):
+    def remove_canvas_window(self,canvas):#,node_instance):#,list_box):
         #self.remove_list_box(list_box)
         canvas.delete(self.window_box_id)
         self.window_frame.destroy()
@@ -2164,18 +2388,23 @@ class Information_Frame():
         self.equipment_label = Label(self.window_frame, text="Equipment")
         self.equipment_list_box = Listbox(self.window_frame, bd=5, exportselection=0, width=10, height=50, bg="skyblue3")
         self.equipment_list_box.pack()
-        self.equipment_list_box.pack()
+        #self.equipment_list_box.pack()
         self.equipment_list_box.bind("<<ListboxSelect>>",lambda event : self.equipment_property_load(event,canvas,x,y,node_instance))
 
     def create_subequipment_list_box(self,canvas,x,y,node_instance):#,node_label):
         #self.remove_canvas_window(canvas, self.equipment_list_box)
         self.remove_canvas_window_objects(self.equipment_list_box,self.equipment_label)
         #self.create_canvas_window(x,y,canvas)#,node_label,self.subequipment_list_box)
-        self.subequipment_list_box = Listbox(self.window_frame, bd=5, exportselection=0, width=10, height=15, bg="deepskyblue")
+        self.subequipment_list_box = Listbox(self.window_frame,selectmode=MULTIPLE, bd=5, exportselection=0, width=10, height=15, bg="deepskyblue")
         self.subequipment_label = Label(self.window_frame, text="Subequipments")
         self.subequipment_label.pack()
         self.subequipment_list_box.pack()
         self.subequipment_list_box.bind('<<ListboxSelect>>', lambda event: self.load_cards_property_window_box(event,canvas,node_instance))
+
+
+    def create_subpart_window(self,canvas,x,y,node_instance):
+        pass
+
 
     def remove_list_box(self,list_box):
         list_box.destroy()
@@ -2236,7 +2465,7 @@ class Information_Frame():
             self.display_properties_subequipment_box.insert(END, k, v)
 
         self.remove_canvas_window_objects(self.subequipment_list_box,self.subequipment_label)
-        self.remove_canvas_window(canvas,node_instance)
+        self.remove_canvas_window(canvas)#,node_instance)
 
         for prop in new_subequipment.equipment_properties_dictionary.values():
             print(prop)
