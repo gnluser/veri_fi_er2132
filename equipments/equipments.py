@@ -1,4 +1,5 @@
 from all_dependencies import *
+import re
 
 class Network_Equipments:
     def __init__(self):
@@ -54,8 +55,8 @@ class Network_Equipments:
                 if items[component_name] not in vendor_instance.equipment_names_list:  # to avoid reloading same properties if present in csv file
                     vendor_instance.equipment_names_list.append(items[component_name])
                     new_equipment = Equipment()
-                    if items[component_name] == "ASR 1004":
-                        print(items[component_name],items[subequipments_supported])
+                    #if items[component_name] == "ASR 1004":
+                    #    print(items[component_name],items[subequipments_supported])
 
                     try:
                         supported_subequipments_list = new_equipment.identify_all_subequipments(items)
@@ -198,7 +199,7 @@ class Equipment():
             if items[subequipments_supported] != "":
                 # self.subequipments_list_function(self.equipment_properties_dictionary[line_cards])
                 print(subequipments_supported)
-                self.subequipments_list_function(items[subequipments_supported])#self.equipment_properties_dictionary[subequipments_supported])
+                self.identify_supported_subequipments_list_function(items[subequipments_supported])#self.equipment_properties_dictionary[subequipments_supported])
                 return self.subequipment_list
             else:
                 print("no data for cards")
@@ -211,14 +212,27 @@ class Equipment():
     def set_equipment_properties(self, items):
         pass
 
-    def subequipments_list_function(self, subequipments):
+    def identify_supported_subequipments_list_function(self, subequipments):
         subequipment_list = []
-        delimeter = [",", "+", "\t", "\n"]
-        for words in subequipments.split("\n"):
-            subequipment_list.append(words)
-            print("subeqpmnt is ",words)
-        # return subequipment_list
-        ##### filling the subequipment_list for use while creating the device
+        #delimeter = [",", "+", "\t", "\n"]
+        #subequipments_slots_delimiter=["\n","$"]
+        regex_number_of_iterations=re.compile(r"^[0-9]+\s*[X,x]\s*]\$")
+        subequipment_slot_regex=re.compile(r"\$\s*|\n*\$\s*|\n")
+        subequipments_per_slot_regex=re.compile(r"\s*or\s+")
+        start_word=re.match(regex_number_of_iterations,subequipments)
+        start_word=start_word.group()
+        regex_numbers=re.compile(r'[0-9]+')
+        start_word=re.match(regex_numbers,start_word)
+        start_word = start_word.group()
+        for i in range(int(start_word)):
+            for subequipment_slot_option in re.split(subequipment_slot_regex,subequipments):
+                for subequipment_per_slot in re.split(subequipments_per_slot_regex,subequipment_slot_option):
+                    if subequipment_per_slot !="":
+                        subequipment_list.append(subequipment_per_slot)
+                #subequipment_list.append(words)
+                #print("subeqpmnt is ",words)
+            # return subequipment_list
+            ##### filling the subequipment_list for use while creating the device
         self.subequipment_list = subequipment_list
         # for eq in words.split(":"):
         # card=Card()

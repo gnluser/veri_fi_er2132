@@ -1,5 +1,7 @@
 from all_dependencies import *
 from addresses import *
+import re
+
 
 class Node():
     def __init__(self, node_id):
@@ -16,6 +18,59 @@ class Node():
         self.packet_queue = []  ## queuing packets instances
         self.subequipment_list = []
         self.canvas_label_window_id=""
+        self.port_list=[]
+        self.port_counter=0
+
+
+    def update_ports(self,ports,subequipment,equipment):
+        self.identify_ports_from_entry(ports)
+
+        #### need to put options for type of ports selection to gui
+
+    def identify_ports_from_entry(self,ports):
+        '''
+        port_list=ports.split(",")
+        for port in port_list:
+            print(port)
+            port_property=port.split("X")
+            num_of_ports=port_property[0]
+            port_capacity=port_property[1]
+            port = Port(self.port_counter,port_capacity)  # port_id, port_capacity, subequipment_instance, node_instance
+            self.port_list.append(port)
+            self.port_counter += 1
+        '''
+        # split ports on bases of space and new line
+
+        port_list_entry=ports.split("\n")
+        for fixed_port_slots in port_list_entry:
+            port_config=fixed_port_slots.split("or")
+            for port_config_option in port_config:
+                port_options=port_config_option.split(" ")
+                num_ports=port_options[0]
+                if port_options[1].lower()=='x':
+                    port_configs=port_options[2]
+                    if port_options.len()>3:
+                        port_type=port_options[3]
+                    else:
+                        port_type=""
+                    type_of_port_options=port_configs.split("/")
+                    list_of_port_capacity_options=[]
+                    for type in type_of_port_options:
+                        x=re.search("G",type)
+                        list_of_port_capacity_options.append(int(x.group())*1000)
+                        y=re.search("M",type)
+                        list_of_port_capacity_options.append(int(y.group()))
+                    port_capacity=max(list_of_port_capacity_options)
+                    ### need to make port selection for the port types
+                    for port_no in range(num_ports):
+                        port=Port(port_no,port_capacity,subequipment_instance="",node_instance=self) ###, port_id, port_capacity, subequipment_instance, node_instance)
+                        port.port_type=port_type
+                        self.port_list.append(port)
+
+                else:
+                    port_type=port_options[1]
+                    for port_no in range(num_ports):
+                        port=Port(port_no,port_capacity="",subequipment_instance="",node_instance=self)
 
     def create_subequipment(self):
         # initialize only one subequipment by default
@@ -157,6 +212,7 @@ class Port():
         self.port_capacity = port_capacity
         self.protocol = ""
         self.network = ""
+        self.port_type=""
         # self.unused_ports=[]
 
 
@@ -200,12 +256,13 @@ class DC_Node(Node):
     def create_north_ports(self,number_of_ports):
         for port in range(number_of_ports):
             self.north_ports_dictionary[port] = Port(port, self.node_id,port_capacity=0)
-    '''
+
 
     def cards_allocation(self):
         card = Card()
         pass
 
+    '''
 
 class Aggregation_DC_Node(DC_Node):
     def __init__(self, node_id):

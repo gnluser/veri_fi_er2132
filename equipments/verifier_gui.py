@@ -352,10 +352,14 @@ class Network():
         self.information_frame.network_frame = self.network_frame
         self.node_frame = Node_Frame(master, self.network_frame, self.simulation)
 
+
         # self.information_frame.load_frame()
         self.network_frame.show_topology_on_frame()
         self.network_frame.node_numbers = self.topology.graph.number_of_nodes()
         self.node_frame.create_window_pane_for_network_node_labels()
+
+        self.node_frame.create_onboarding_portal()
+
 
     def equipment_creation_handler(self, topology, node_instance):
         pass
@@ -373,6 +377,38 @@ class Node_Frame():
         self.master = master
         self.network_frame = network_frame
 
+
+
+    def create_onboarding_portal(self):
+        self.onboarding_portal_flag=0
+        self.verifier_ballot = Frame(self.network_frame.canvas)
+        self.verifier_window=self.network_frame.canvas.create_window(canvas_width/2,100,window=self.verifier_ballot,width=200,height=100)
+        self.verifier_ballot.pack()
+        self.verifier_label=Label(self.verifier_ballot,text="Verifier")
+        self.verifier_label.pack()
+        #self.onboarding_portal_button=Button(self.onboarding_button_frame,text="Onboarding Portal",command=self.add_onboarding)
+        #self.hide_onboarding_button=Button(self.onboarding_button_frame,text="Hide Onboarding",command=self.remove_onboarding)
+        #self.onboarding_portal_button.pack(side="top")
+        #self.hide_onboarding_button.pack(side="top")
+
+
+
+    def add_onboarding(self):
+        if self.onboarding_portal_flag==0:
+            self.onboarding_portal_flag=1
+            self.onboarding_portal = Onboarding_Portal()
+            self.onboarding_portal.create_onboarding_portal_window(self.master, self)
+
+
+    def remove_onboarding(self):
+        self.onboarding_portal.exit_onboarding_portal()
+        self.onboarding_portal_flag=0
+
+    def moving_back_to_verifier(self):
+        #self.onboarding_portal_button = Button(self.master, text="Onboarding Portal",command=self.onboarding_portal.create_onboarding_portal_window(self.master, self.onboarding_portal_button, self))
+        #self.onboarding_portal_button.pack(side="top")
+        pass
+
     def create_window_pane_for_network_node_labels(self):
         # network_nodes_button=Button(self.canvas,"Network Nodes")
         nodemenubar = Menu(self.master)
@@ -388,6 +424,11 @@ class Node_Frame():
                                 command=self.network_frame.create_window_pane_for_client_server_node_labels)
         nodemenubar.add_command(label="General Nodes",
                                 command=self.network_frame.create_window_pane_for_general_nodes_label)
+        nodemenubar.add_command(label="Onboarding Portal",command=self.add_onboarding)
+        nodemenubar.add_command(label="Hide Onboarding Portal", command=self.remove_onboarding)
+        nodemenubar.add_command(label="Show Information",
+                                command=self.network_frame.information_frame.create_info_frame)
+        nodemenubar.add_command(label="Hide Information",command=self.network_frame.information_frame.hide_info_frame)
         self.master.config(menu=nodemenubar)
 
 

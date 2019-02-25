@@ -2,6 +2,8 @@ from node import *
 from all_dependencies import *
 from addresses import  *
 from info_frame import *
+from onboarding_portal import *
+
 
 class Network_Frame():
     def __init__(self, master, topology, simulation):
@@ -552,6 +554,7 @@ class Display_Node():
         # print(widget)
         self.reset_entries_and_labels()
         time.sleep(0.25)
+        print("erronous current label is ",self.current_label)
         node = self.node_label_dictionary[self.current_label]
         # text=self.text_label_dictionary[self.current_label]
         attributes = node_type[node]

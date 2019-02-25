@@ -25,14 +25,17 @@ current_deployed_topology_file = "current_topology.csv"  ### this file contain t
 ## cad type subcategory is interface type
 component_series="Equipment series"
 component_name = "Equipment name"#'component name'
-subequipments_supported="subequipments/ports supported"
+#subequipments_supported="subequipments/ports supported"
+subequipments_supported="subequipments supported"
 subequipment_name="Subequipment"
 type="type of equipment/subequipment"
+
 number_of_subeqpmnt="number of interface cards"
 subpart="subpart"
 subeqpmnt_subpart="sub parts on subequipments"
 number_of_subport_per_subeqpmnt="number of subparts per subequipments"
-ports= 'ports on cards/equipment'
+ports= 'ports on equipment/subequipment'
+#ports="ports"
 throughput = 'Throughput'
 line_rate = 'Mpps'
 line_cards = 'line cards'
