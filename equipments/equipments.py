@@ -212,31 +212,41 @@ class Equipment():
     def set_equipment_properties(self, items):
         pass
 
+
+
+    def find_number_of_iteration(self,temp_string):
+        regex_number_of_iterations=re.compile(r"^\s*[0-9]+\s*[X,x]\s*")
+        temp = re.match(regex_number_of_iterations, temp_string)
+        if temp is None:
+            num_iteration = 1
+        else:
+            temp = temp.group()
+            temp = re.match("[0-9]+", temp)
+            temp = temp.group()
+            num_iteration = int(temp)
+
+        return num_iteration
+
     def identify_supported_subequipments_list_function(self, subequipments):
         subequipment_list = []
-        #delimeter = [",", "+", "\t", "\n"]
-        #subequipments_slots_delimiter=["\n","$"]
-        regex_number_of_iterations=re.compile(r"^[0-9]+\s*[X,x]\s*]\$")
-        subequipment_slot_regex=re.compile(r"\$\s*|\n*\$\s*|\n")
+        subequipment_slot_regex=re.compile(r"\s*\$\s*|\s*\n\s*")
         subequipments_per_slot_regex=re.compile(r"\s*or\s+")
-        start_word=re.match(regex_number_of_iterations,subequipments)
-        start_word=start_word.group()
-        regex_numbers=re.compile(r'[0-9]+')
-        start_word=re.match(regex_numbers,start_word)
-        start_word = start_word.group()
-        for i in range(int(start_word)):
-            for subequipment_slot_option in re.split(subequipment_slot_regex,subequipments):
+
+        print(subequipments)
+        for subequipment_slot_option in re.split(subequipment_slot_regex,subequipments):#subequipments.split("\n"):#
+            if subequipment_slot_option != "":
+                temp_string = subequipment_slot_option
+
+                num_iteration=self.find_number_of_iteration(temp_string)
+
+                print(subequipment_slot_option)
                 for subequipment_per_slot in re.split(subequipments_per_slot_regex,subequipment_slot_option):
-                    if subequipment_per_slot !="":
+                    #subequipment_per_slot=re.search(r"\w.*",subequipment_per_slot).group()
+                    for num in range(num_iteration):
                         subequipment_list.append(subequipment_per_slot)
-                #subequipment_list.append(words)
-                #print("subeqpmnt is ",words)
-            # return subequipment_list
-            ##### filling the subequipment_list for use while creating the device
+
+        ##### filling the subequipment_list for use while creating the device
         self.subequipment_list = subequipment_list
-        # for eq in words.split(":"):
-        # card=Card()
-        # card_list.append(card)
 
 
 ########################################################################################
