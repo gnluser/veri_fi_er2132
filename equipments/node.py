@@ -22,7 +22,14 @@ class Node():
         self.port_counter=0
 
 
-    def update_ports(self,ports,subequipment,equipment):
+    def update_ports(self,ports,subpart,subequipment,equipment):
+    #def update_ports(self,**kwargs):
+        #if len(kwargs) == 1:
+        #    pass
+        #else:
+        #ports=kwargs[0]
+        #        subequipment=kwargs[1]
+        #    equipment=kwargs[2]
         self.identify_ports_from_entry(ports)
 
         #### need to put options for type of ports selection to gui
@@ -40,37 +47,43 @@ class Node():
             self.port_counter += 1
         '''
         # split ports on bases of space and new line
+        if ports!="":
+            print("lnbnmk;",ports)
+            port_list_entry=ports.split("\n")
+            for fixed_port_slots in port_list_entry:
+                port_config=fixed_port_slots.split("or")
+                for port_config_option in port_config:
+                    port_options=port_config_option.split(" ")
+                    num_ports=port_options[0]
+                    if port_options[1].lower()=='x':
+                        port_configs=port_options[2]
+                        if len(port_options)>3:
+                        #if port_options.len()>3:
+                            port_type=port_options[3]
+                        else:
+                            port_type=""
+                        type_of_port_options=port_configs.split("/")
+                        list_of_port_capacity_options=[]
+                        for type in type_of_port_options:
+                            #x=re.search("G",type)
+                            x=re.split("\s*G",type)[0]
+                            list_of_port_capacity_options.append(int(x)*1000)
+                            y=re.split("\s*M",type)[0]
+                            y=re.search("M",type)
+                            list_of_port_capacity_options.append(int(y))
+                        port_capacity=max(list_of_port_capacity_options)
+                        ### need to make port selection for the port types
+                        for port_no in range(num_ports):
+                            port=Port(port_no,port_capacity,subequipment_instance="",node_instance=self) ###, port_id, port_capacity, subequipment_instance, node_instance)
+                            port.port_type=port_type
+                            self.port_list.append(port)
 
-        port_list_entry=ports.split("\n")
-        for fixed_port_slots in port_list_entry:
-            port_config=fixed_port_slots.split("or")
-            for port_config_option in port_config:
-                port_options=port_config_option.split(" ")
-                num_ports=port_options[0]
-                if port_options[1].lower()=='x':
-                    port_configs=port_options[2]
-                    if port_options.len()>3:
-                        port_type=port_options[3]
                     else:
-                        port_type=""
-                    type_of_port_options=port_configs.split("/")
-                    list_of_port_capacity_options=[]
-                    for type in type_of_port_options:
-                        x=re.search("G",type)
-                        list_of_port_capacity_options.append(int(x.group())*1000)
-                        y=re.search("M",type)
-                        list_of_port_capacity_options.append(int(y.group()))
-                    port_capacity=max(list_of_port_capacity_options)
-                    ### need to make port selection for the port types
-                    for port_no in range(num_ports):
-                        port=Port(port_no,port_capacity,subequipment_instance="",node_instance=self) ###, port_id, port_capacity, subequipment_instance, node_instance)
-                        port.port_type=port_type
-                        self.port_list.append(port)
-
-                else:
-                    port_type=port_options[1]
-                    for port_no in range(num_ports):
-                        port=Port(port_no,port_capacity="",subequipment_instance="",node_instance=self)
+                        port_type=port_options[1]
+                        for port_no in range(int(num_ports)):
+                            port=Port(port_no,port_capacity="",subequipment_instance="",node_instance=self)
+                            port.port_type=port_type
+                            self.port_list.append(port)
 
     def create_subequipment(self):
         # initialize only one subequipment by default

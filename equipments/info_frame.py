@@ -217,7 +217,7 @@ class Information_Frame():
                                      lambda event: self.equipment_property_load(event, canvas, x, y, node_instance))
 
 
-    def create_subequipment_list_box(self, canvas, x, y, node_instance):  # ,node_label):
+    def create_subequipment_list_box(self, canvas, x, y, node_instance,equipment_name):  # ,node_label):
         # self.remove_canvas_window(canvas, self.equipment_list_box)
         self.remove_canvas_window_objects(self.equipment_list_box, self.equipment_label)
         #yscrollbar = Scrollbar(self.window_frame, orient=VERTICAL)
@@ -230,7 +230,7 @@ class Information_Frame():
         self.subequipment_label.pack()
         self.subequipment_list_box.pack()
 
-        self.subequipment_select_button=Button(self.window_frame,text="Click",command= lambda: self.load_subeqpmnt_property_window_box(canvas))#,node_instance))
+        self.subequipment_select_button=Button(self.window_frame,text="Click",command= lambda: self.load_subeqpmnt_property_window_box(canvas,equipment_name))#,node_instance))
 
         self.subequipment_select_button.pack(side="bottom")
         self.subequipment_list_box.bind('<<ListboxSelect>>',lambda event: self.display_subparts_of_respective_subequipments(event, canvas, node_instance, x,y))
@@ -262,7 +262,8 @@ class Information_Frame():
         subpart_instance.name=subpart
         subpart_instance.subpart_properties_dictionary=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[subpart]
         ports = self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[subpart][ports]
-        self.current_node_instance.update_ports(ports,subpart,self.new_equipment)
+        subequipment = ""
+        self.current_node_instance.update_ports(ports,subpart,subequipment,self.new_equipment)
 
     def remove_list_box(self, list_box):
         list_box.destroy()
@@ -305,7 +306,7 @@ class Information_Frame():
             self.subequipment_list_box.delete(0, END)
         except:
             print("not new subequipment box")
-        self.create_subequipment_list_box(canvas, x, y, node_instance)
+        self.create_subequipment_list_box(canvas, x, y, node_instance,equipment_name)
 
         print("curent vendor is   ",self.current_vendor_instance)
         subequipment_supported=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[equipment_name][subequipments_supported]
@@ -364,11 +365,12 @@ class Information_Frame():
 
 
     def add_ports_and_properties_to_equipment(self,equipment_dictionary,equipment,subequipment):
-        if subequipment == Default:
-            port=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[self.new_equipment.name][ports]
-            self.current_node_instance.update_ports(port,subequipment,equipment)
-        else:
-            pass
+        #if subequipment == Default:
+        port=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[self.new_equipment.name][ports]
+        subpart = ""
+        self.current_node_instance.update_ports(port,subpart,subequipment,equipment)
+        #else:
+        #    pass
 
 
     def call_subpart_create_function(self,new_subequipment,canvas,node_instance,x,y):
@@ -380,7 +382,7 @@ class Information_Frame():
         self.create_subpart_window( canvas, x, y, node_instance)
 
 
-    def load_subeqpmnt_property_window_box(self, canvas):#, node_instance):
+    def load_subeqpmnt_property_window_box(self, canvas, equipment_name):#, node_instance):
 
         # self.remove_canvas_window(canvas,self.subequipment_list_box)
 
@@ -390,20 +392,30 @@ class Information_Frame():
         indices = self.subequipment_list_box.curselection()
         for index in indices:
             new_subequipment_name= self.subequipment_list_box.get(int(index))
-            new_subequipment=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment_name]
+            if new_subequipment_name == Default:
+                #ports=self.current_node_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[ports]
+                new_subequipment=Default
+                #self.current_node_instance.update_ports(ports)
+
+                for k,v in self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[equipment_name].items():
+                    print("equipment property ",k,v)
+                    self.display_properties_subequipment_box.insert(END, k + "\t" + v)
+
+            else:
+                new_subequipment=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment_name]
             # self.subpart_window_list.append(self)
 
 
 
-            for k, v in new_subequipment.items():#.subequipment_properties_dictionary.items():
-                print("equipment ", k, v)
-                self.display_properties_subequipment_box.insert(END, k+"\t"+ v)
+                for k, v in new_subequipment.items():#.subequipment_properties_dictionary.items():
+                    print("Sub equipment property ", k, v)
+                    self.display_properties_subequipment_box.insert(END, k+"\t"+ v)
 
             self.remove_canvas_window_objects(self.subequipment_list_box, self.subequipment_label)
             self.remove_canvas_window(canvas)  # ,node_instance)
 
-            for prop in new_subequipment.values():
-                print(prop)
+            #for prop in new_subequipment.values():
+            #    print(prop)
 
     def constraints_per_node(self, equipment, properties):
         pass
