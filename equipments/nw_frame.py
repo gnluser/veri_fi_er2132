@@ -145,35 +145,56 @@ class Network_Frame():
                 edge_label = self.network_edge_labels[(node_instance, connecting_node_instance)]
                 self.network_edge_labels.pop((node_instance, connecting_node_instance))
             self.canvas.delete(edge_label)
-        for label,instance in self.network_node_instances_labels.items():
+        #for label,instance in self.network_node_instances_labels.items():
+        for label in self.network_node_instances_labels.copy():
+            instance=self.network_node_instances_labels[label]
             if node_instance == instance:
-                self.network_node_instances_labels.pop(label)
+                try:
+                    self.network_node_instances_labels.pop(label)
+                except:
+                    print("instance label is popped")
                 self.canvas.delete(label)
 
 
     def show_connecting_node_options(self,event,present_coords,node_instance):
+        button_color="gold"
+        list_box_color="yellow"
+        label_color="light goldenrod"
+        frame_width=120
+        frame_height=200
+        literal_box_entry = "Node "
         x1,y1,x2,y2=present_coords
         self.node_connection_options_frame=Frame(self.canvas)
-        button=Button(self.node_connection_options_frame,text="Delete "+str(node_instance.node_id),command=lambda : self.remove_network_node_and_respective_components(node_instance))
-        listbox=Listbox(self.node_connection_options_frame)
-        button.pack(side="top")
+        delete_button=Button(self.node_connection_options_frame,bg=button_color,width=frame_width,text="Delete Node "+str(node_instance.node_id),command=lambda : self.remove_network_node_and_respective_components(node_instance))
+        listbox=Listbox(self.node_connection_options_frame,selectmode=MULTIPLE,bg=list_box_color)
+        connect_label=Label(self.node_connection_options_frame,bg=label_color,text="Connect to Nodes",width=frame_width)
+        connect_button=Button(self.node_connection_options_frame,bg=button_color,text="Connect",width=frame_width)
+        connect_button.configure(command=lambda: self.connect_edge_to_respective_node(listbox,node_instance,self.window_for_edge_options,literal_box_entry))
+        delete_button.pack(side="top")
+        connect_label.pack(side="top")
+        connect_button.pack(side="bottom")
         listbox.pack()
-        self.window_for_edge_options=self.canvas.create_window(x1+30,y2+100,window=self.node_connection_options_frame,width=50,height=100)
-        listbox.bind("<<ListboxSelect>>",lambda event: self.connect_edge_to_respective_node(event,node_instance,self.window_for_edge_options))
+        self.window_for_edge_options=self.canvas.create_window(x1+100,y2+100,window=self.node_connection_options_frame,width=frame_width,height=frame_height)
+        #listbox.bind("<<ListboxSelect>>",lambda event: self.connect_edge_to_respective_node(event,node_instance,self.window_for_edge_options))
         for label, connecting_node_instance in self.network_node_instances_labels.items():
             if connecting_node_instance not in node_instance.connecting_node_instance_list and connecting_node_instance != node_instance:
                 node_id=connecting_node_instance.node_id
-                listbox.insert(END,node_id)
+                listbox.insert(END,literal_box_entry+str(node_id))
         #if len(self.network_node_instances_labels)==1 and
 
 
-    def connect_edge_to_respective_node(self,event,node_instance,window_label):
-        widget=event.widget
-        index=int(widget.curselection()[0])
-        connecting_node_id=widget.get(index)
-        connecting_node_instance=self.topology.node_instance_dictionary_by_node_id[connecting_node_id]
-        self.canvas.delete(window_label)
-        self.create_edge_between_two_nodes(node_instance,connecting_node_instance)
+    #def connect_edge_to_respective_node(self,event,node_instance,window_label):
+    def connect_edge_to_respective_node(self, widget, node_instance, window_label,literal_box_entry):
+        #widget=event.widget
+
+        #index=int(widget.curselection()[0])
+        indices=widget.curselection()
+        for index in indices:
+            connecting_to_node=widget.get(int(index))
+            connecting_node_id=int(connecting_to_node[len(literal_box_entry):])
+            connecting_node_instance=self.topology.node_instance_dictionary_by_node_id[connecting_node_id]
+            self.canvas.delete(window_label)
+            self.create_edge_between_two_nodes(node_instance,connecting_node_instance)
 
 
     def create_edge_between_drop_and_positioned_nodes(self, new_node_instance):

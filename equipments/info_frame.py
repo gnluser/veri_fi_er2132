@@ -130,7 +130,7 @@ class Information_Frame():
         self.display_equipment_label = Label(self.frame, text="Equipment Attributes")
         self.display_subequipment_label = Label(self.frame, text="Subequipment Attributes", bg=info_label_color)
         self.display_properties_equipment_box = Text(self.frame)
-        self.display_properties_subequipment_box = Entry(self.frame, bg=text_bg_color)
+        self.display_properties_subequipment_box = Text(self.frame,height=100,width=25, bg=text_bg_color)
         # self.display_equipment_label.grid(row=row_span+9,column=0,columnspan=1,sticky=N+E+S+W,pady=1)
         # self.display_properties_equipment_box.grid(row=row_span+1,column=0,columnspan=1,rowspan=5,sticky=N+E+S+W,pady=1)
 
@@ -171,7 +171,7 @@ class Information_Frame():
         self.window_frame.destroy()
 
     def reset_subequipment_property_box(self):
-        self.display_properties_subequipment_box.delete(0, END)
+        self.display_properties_subequipment_box.delete(1.0, END)
 
     def reset_equipment_property_box(self):
         self.display_properties_equipment_box.delete(0, END)
@@ -384,32 +384,41 @@ class Information_Frame():
 
     def load_subeqpmnt_property_window_box(self, canvas, equipment_name):#, node_instance):
 
-        # self.remove_canvas_window(canvas,self.subequipment_list_box)
-
-        # self.current_vendor_instance.subequipment_dictionary.
         print("subequipments selected")
-        # if new_equipment.subequipment_list
+        try:
+            self.reset_subequipment_property_box()
+
+        except:
+            print("First run, subequipment property box is empty")
+
+
         indices = self.subequipment_list_box.curselection()
         for index in indices:
             new_subequipment_name= self.subequipment_list_box.get(int(index))
+
             if new_subequipment_name == Default:
                 #ports=self.current_node_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[ports]
                 new_subequipment=Default
                 #self.current_node_instance.update_ports(ports)
 
-                for k,v in self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[equipment_name].items():
-                    print("equipment property ",k,v)
-                    self.display_properties_subequipment_box.insert(END, k + "\t" + v)
+                subeqpmnt_property=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[equipment_name]
+                for k,v in subeqpmnt_property.items():
+                    print("equipment property ",k,"\t",v)
+                port=subeqpmnt_property[ports]
+                protocols=subeqpmnt_property[protocol]
+                self.display_properties_subequipment_box.insert(END, "Ports" + " :-\n" + port+"\n")
+                self.display_properties_subequipment_box.insert(END, "Protocols"+" :-\n"+protocols+"\n")
 
             else:
-                new_subequipment=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment_name]
+                new_equipment_property=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment_name]
             # self.subpart_window_list.append(self)
 
-
-
-                for k, v in new_subequipment.items():#.subequipment_properties_dictionary.items():
+                for k, v in new_equipment_property.items():#.subequipment_properties_dictionary.items():
                     print("Sub equipment property ", k, v)
-                    self.display_properties_subequipment_box.insert(END, k+"\t"+ v)
+                port=new_equipment_property[ports]
+                protocols=new_equipment_property[protocol]
+                self.display_properties_subequipment_box.insert(END, "Ports"+ " :-\n"+port+"\n")
+                self.display_properties_subequipment_box.insert(END, "Protocols" + " :-\n" + protocols + "\n")
 
             self.remove_canvas_window_objects(self.subequipment_list_box, self.subequipment_label)
             self.remove_canvas_window(canvas)  # ,node_instance)
