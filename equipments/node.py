@@ -20,6 +20,7 @@ class Node():
         self.canvas_label_window_id=""
         self.port_list=[]
         self.port_counter=0
+        self.canvas_color=""
 
 
     def update_ports(self,ports,subpart,subequipment,equipment):
@@ -47,14 +48,21 @@ class Node():
             self.port_counter += 1
         '''
         # split ports on bases of space and new line
+
         if ports!="":
-            print("lnbnmk;",ports)
+            #print("lnbnmk;",ports)
             port_list_entry=ports.split("\n")
+            for item in port_list_entry:
+                print(item)
+            print("vjbjbv")
             for fixed_port_slots in port_list_entry:
-                port_config=fixed_port_slots.split("or")
+                port_config=fixed_port_slots.split("\s+or\s+")
                 for port_config_option in port_config:
+                    print(port_config_option)
                     port_options=port_config_option.split(" ")
-                    num_ports=port_options[0]
+                    print("port k ",port_options)
+                    num_ports=int(port_options[0])
+                    print(num_ports)
                     if port_options[1].lower()=='x':
                         port_configs=port_options[2]
                         if len(port_options)>3:
@@ -62,28 +70,41 @@ class Node():
                             port_type=port_options[3]
                         else:
                             port_type=""
-                        type_of_port_options=port_configs.split("/")
+                        reg=re.compile("\s*/\s*")
+                        type_of_port_options=re.split(reg,port_configs)#.split("/")
+                        print("//",type_of_port_options)
                         list_of_port_capacity_options=[]
                         for type in type_of_port_options:
                             #x=re.search("G",type)
-                            x=re.split("\s*G",type)[0]
-                            list_of_port_capacity_options.append(int(x)*1000)
-                            y=re.split("\s*M",type)[0]
-                            y=re.search("M",type)
-                            list_of_port_capacity_options.append(int(y))
-                        port_capacity=max(list_of_port_capacity_options)
+                            if 'G' in type:
+                                x=re.split("\s*G",type)[0]
+                                list_of_port_capacity_options.append(int(x)*1000)
+                                print("x is ",x)
+                            elif 'M' in type:
+                                y=re.split("\s*M",type)[0]
+                                #y=re.search("M",type)
+                                print("y is ", y)
+                                list_of_port_capacity_options.append(int(y))
+                        port_capacity=list_of_port_capacity_options[0]
                         ### need to make port selection for the port types
                         for port_no in range(num_ports):
-                            port=Port(port_no,port_capacity,subequipment_instance="",node_instance=self) ###, port_id, port_capacity, subequipment_instance, node_instance)
+                            self.port_counter+=1
+                            port=Port(self.port_counter,port_capacity,subequipment_instance="",node_instance=self) ###, port_id, port_capacity, subequipment_instance, node_instance)
                             port.port_type=port_type
                             self.port_list.append(port)
-
                     else:
                         port_type=port_options[1]
                         for port_no in range(int(num_ports)):
-                            port=Port(port_no,port_capacity="",subequipment_instance="",node_instance=self)
+                            self.port_counter += 1
+                            port=Port(self.port_counter,port_capacity="",subequipment_instance="",node_instance=self)
                             port.port_type=port_type
                             self.port_list.append(port)
+        print("Now updated ports are ")
+
+        for port in self.port_list:
+            print(port.port_id,"\t",port)
+            self.port_counter+=1
+
 
     def create_subequipment(self):
         # initialize only one subequipment by default
@@ -336,8 +357,8 @@ class Core_Node(DC_Node):
         # Node.node_id=node_name
         # Node.number_of_ports=number_of_ports
         # self.port_dictionary={}
-        self.create_north_ports(1)  # only one north port
-        self.create_south_ports(self.number_of_ports)
+        #self.create_north_ports(1)  # only one north port
+        #self.create_south_ports(self.number_of_ports)
         self.distance = 180
 
 

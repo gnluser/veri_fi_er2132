@@ -65,7 +65,7 @@ class Network_Equipments:
                         #        vendor_instance.subequipment_list.append(sub_eq)
                     except:
                         print("no subequipments, only builtin components")
-                        supported_subequipments_list=Default
+                        supported_subequipments_list=[Default]
 
                     vendor_instance.subeqpmnts_per_eqpmnts_dictionary[new_equipment] = supported_subequipments_list
                     new_equipment.equipment_properties(items)
@@ -128,7 +128,8 @@ class Network_Equipments:
 
 
             else:
-                print("Empty line")
+                pass
+                #print("Empty line")
 
     def calling_vendor_names(self):
         # forwarding json  file to app to gorward it to the web page
@@ -198,12 +199,14 @@ class Equipment():
         try:
             if items[subequipments_supported] != "":
                 # self.subequipments_list_function(self.equipment_properties_dictionary[line_cards])
-                print(subequipments_supported)
+                #print(subequipments_supported)
                 self.identify_supported_subequipments_list_function(items[subequipments_supported])#self.equipment_properties_dictionary[subequipments_supported])
-                return self.subequipment_list
+
             else:
-                print("no data for cards")
-                return Default
+                #print("no data for cards")
+                self.subequipment_list.append(Default)
+
+            return self.subequipment_list
 
         except:
             print("error in reading equipment's subequipments")
@@ -215,32 +218,38 @@ class Equipment():
 
 
     def find_number_of_iteration(self,temp_string):
-        regex_number_of_iterations=re.compile(r"^\s*[0-9]+\s*[X,x]\s*")
+        regex_number_of_iterations=re.compile(r"^\s*[0-9]+\s*[X,x]\s*[$]")
         temp = re.match(regex_number_of_iterations, temp_string)
         if temp is None:
             num_iteration = 1
+            string_index=temp_string.find("$")
+            if string_index != -1:
+                temp_string=temp_string[string_index+1:].lstrip()
+
         else:
             temp = temp.group()
             temp = re.match("[0-9]+", temp)
             temp = temp.group()
             num_iteration = int(temp)
-
-        return num_iteration
+            string_index=temp_string.find("$")
+            temp_string=temp_string[string_index+1:].lstrip()
+        return num_iteration,temp_string
 
     def identify_supported_subequipments_list_function(self, subequipments):
         subequipment_list = []
-        subequipment_slot_regex=re.compile(r"\s*\$\s*|\s*\n\s*")
+        subequipment_slot_regex=re.compile(r"\s*\n\s*")#\s*\$\s*
         subequipments_per_slot_regex=re.compile(r"\s*or\s+")
 
-        print(subequipments)
+        #print(subequipments)
         for subequipment_slot_option in re.split(subequipment_slot_regex,subequipments):#subequipments.split("\n"):#
             if subequipment_slot_option != "":
                 temp_string = subequipment_slot_option
 
-                num_iteration=self.find_number_of_iteration(temp_string)
+                num_iteration,subequipment_option=self.find_number_of_iteration(temp_string)
 
-                print(subequipment_slot_option)
-                for subequipment_per_slot in re.split(subequipments_per_slot_regex,subequipment_slot_option):
+                print("num iterations are ",num_iteration)
+                #print(subequipment_slot_option)
+                for subequipment_per_slot in re.split(subequipments_per_slot_regex,subequipment_option):
                     #subequipment_per_slot=re.search(r"\w.*",subequipment_per_slot).group()
                     for num in range(num_iteration):
                         subequipment_list.append(subequipment_per_slot)
@@ -298,12 +307,12 @@ class SubEquipment(Equipment):
 
             if items[subeqpmnt_subpart] != "":
                 # self.subequipments_list_function(self.equipment_properties_dictionary[line_cards])
-                print("items[]",items[subeqpmnt_subpart])
+                #print("items[]",items[subeqpmnt_subpart])
                 return self.subparts_list_function(items[subeqpmnt_subpart])#self.subequipment_properties_dictionary[subequipments_supported])
                 # return self.subequipment_list
             else:
                 return Default
-                print("no data for subparts")
+                #print("no data for subparts")
 
         except:
             print("error in reading subeqpmnt subparts")

@@ -22,24 +22,67 @@ class Network_Frame():
         self.node_entry = ""
         self.entry_window = []
         self.network_node_instance_list = topology.network_node_instance_list
-
         self.network_edge_labels = {}
-
         self.edge_entry_point_label_list = []
-
         self.node_click_tally = 0
         # self.canvas_click_function()
 
         self.connecting_node_instance = ""
         self.network_node_instances_labels = {}
-
         #self.network_node_instance_by_node_id={}
         self.labels_generated_after_menu_node_type_selection = []
-
         # self.create_window_pane_for_network_node_labels()
 
-        # print(self.node_numbers)
-        # pass
+        self.service_counter=0
+        self.node_dict_for_service={}
+
+
+    def allow_node_selection_for_service(self):
+        self.service_counter=1
+        self.right_nodes_dict={}
+        self.left_nodes_dict={}
+        print("allowignbdn jbn ")
+
+
+
+    def close_node_selection_for_service(self):
+        self.service_counter=0
+        #for label,node in self.left_nodes_dict.items():
+        #    self.canvas.itemconfig(label,fill=node.color)
+        print("close node")
+        for label,node in self.right_nodes_dict.items():
+            self.canvas.itemconfig(label,fill=node.color)
+
+
+        for label,node in self.left_nodes_dict.items():
+            self.reset_node_on_canvas(label,node)
+
+        for label,node in self.right_nodes_dict.items():
+            self.reset_node_on_canvas(label,node)
+
+
+
+    def reset_node_on_canvas(self,label,node):
+        print("service is hidden")
+        node_name=self.node_label_dictionary[label]
+        self.canvas.delete(label)
+        self.node_label_dictionary.pop(label)
+        label = self.create_polygon_node(node.canvas_coords, node.color)
+        self.node_label_dictionary[label]=node_name
+        self.network_node_instances_labels[label] = node
+
+        self.canvas.tag_bind(label, "<Button-1>",
+                             lambda event: self.node_clicked(event))  # , self.current_label,text,x,y))
+        # self.canvas.tag_bind(text, "<Button-1>", lambda event: self.node_tinkered(event, new_node_label,text,x,y))
+        self.canvas.tag_bind(label, "<ButtonRelease-1>",
+                             self.move_node)  # lambda event : self.move_node(event,self.current_label,text.text,new_node_instance,attributes))
+        self.canvas.tag_bind(label, "<Double-1>",
+                             lambda event: self.create_equipment_selection_box(event, label,
+                                                                               node))
+        self.canvas.tag_bind(label, "<Button-3>",
+                             lambda event: self.show_connecting_node_options(event, node.canvas_coords,node))
+        self.move_edges(node)
+        self.canvas.update()
 
     def delete_labels_generated_for_menu_node_type_selection(self):
         for label in self.labels_generated_after_menu_node_type_selection:
@@ -63,6 +106,46 @@ class Network_Frame():
             # elf.network_node_instances_labels[]#
             ####need to create links
 
+
+    def create_polygon_node(self,coords,color):
+        a1,b1,a2,b2=coords
+        node_height=int((b2-b1)/2)
+        node_width=(a2-a1)
+        slack=node_height
+        #self.canvas.create_line(a1,a2,b1,b2)
+        #print("coords are ",a1,a2,b1,b2)
+        a2, b2 = a1, b1 + node_height
+        a3,b3 = a2 + node_width, b2
+        a4,b4 = a3 + slack, b3 - slack
+        a5,b5 = a4, b4 - node_height
+        #self.canvas.create_line(d1,d2,e1,e2)
+        a6,b6 = a5 - node_width, b5
+        label = self.canvas.create_polygon(a1, b1, a2,b2,a3,b3,a4,b4,a5,b5,a6,b6, fill=color)
+
+        #label=self.canvas.create_oval(coords, fill=color)
+
+        return label
+
+
+
+    def move_polygon_node(self,coords,color):
+        a1, b1, a2, b2 = coords
+        node_height = int((b2 - b1) / 2)
+        node_width = (a2 - a1)
+        slack = node_height
+        # self.canvas.create_line(a1,a2,b1,b2)
+        # print("coords are ",a1,a2,b1,b2)
+        a2, b2 = a1, b1 + node_height
+        a3, b3 = a2 + node_width, b2
+        a4, b4 = a3 + slack, b3 - slack
+        a5, b5 = a4, b4 - node_height
+        # self.canvas.create_line(d1,d2,e1,e2)
+        a6, b6 = a5 - node_width, b5
+        label = self.canvas.create_polygon(a1, b1, a2, b2, a3, b3, a4, b4, a5, b5, a6, b6, fill=color)
+
+
+        return label
+
     def create_node_instance_label_on_canvas(self,node_instance):
         a,b,c,d=node_instance.canvas_coords
         # a and d are the required window
@@ -73,15 +156,17 @@ class Network_Frame():
         self.canvas.delete(node_instance.canvas_label_window_id)
 
     def create_node_in_display_from_topology(self, node_instance):
+        # canvas_coords are coords for rectangle of node
         coords = node_instance.canvas_coords
         name = node_instance.name
         attributes = node_type[name]
+        node_instance.color=attributes["color"]
         try:
             radius = attributes["radius"]
-            new_node_label = self.canvas.create_oval(coords, fill=attributes["color"])
+            new_node_label = self.create_polygon_node(coords,fill=node_instance.color)#self.canvas.create_oval(coords, fill=attributes["color"])
         except:
             length = attributes["length"]
-            new_node_label = self.canvas.create_rectangle(coords, fill=attributes["color"])
+            new_node_label = self.canvas.create_rectangle(coords, fill=node_instance.color)
 
         self.create_node_instance_label_on_canvas(node_instance)
 
@@ -162,36 +247,125 @@ class Network_Frame():
         label_color="light goldenrod"
         frame_width=120
         frame_height=200
-        literal_box_entry = "Node "
+        box_entry_literal = "Node "
         x1,y1,x2,y2=present_coords
         self.node_connection_options_frame=Frame(self.canvas)
-        delete_button=Button(self.node_connection_options_frame,bg=button_color,width=frame_width,text="Delete Node "+str(node_instance.node_id),command=lambda : self.remove_network_node_and_respective_components(node_instance))
+        delete_button=Button(self.node_connection_options_frame,width=frame_width,bg=button_color,text="Delete Node "+str(node_instance.node_id),command=lambda : self.remove_network_node_and_respective_components(node_instance))
         listbox=Listbox(self.node_connection_options_frame,selectmode=MULTIPLE,bg=list_box_color)
+        show_ports_option_button=Button(self.node_connection_options_frame,bg=button_color,text="Show Ports",width=int(frame_width/2))
         connect_label=Label(self.node_connection_options_frame,bg=label_color,text="Connect to Nodes",width=frame_width)
-        connect_button=Button(self.node_connection_options_frame,bg=button_color,text="Connect",width=frame_width)
-        connect_button.configure(command=lambda: self.connect_edge_to_respective_node(listbox,node_instance,self.window_for_edge_options,literal_box_entry))
+        connect_button=Button(self.node_connection_options_frame,bg=button_color,text="Connect",width=int(frame_width/2))
+        connect_button.configure(command=lambda: self.connect_edge_to_respective_node(listbox,node_instance,self.window_for_edge_options,box_entry_literal))
+        show_ports_option_button.configure(command=lambda: self.show_ports_options_between_node1_node2(x1,y2,listbox,node_instance,box_entry_literal))
+
         delete_button.pack(side="top")
         connect_label.pack(side="top")
+
         connect_button.pack(side="bottom")
+        show_ports_option_button.pack(side="bottom")
         listbox.pack()
+        #delete_button.grid(row=0,column=0,columnspan=2)
+        #connect_label.grid(row=1,column=0,columnspan=2)
+        #listbox.grid(row=2,column=0,rowspan=3,columnspan=2)
+        #show_ports_option_button.grid(row=6,column=1)
+        #connect_button.grid(row=6, column=0)
+        #listbox.bind('<<ListboxSelect>>',lambda event: self.show_ports_options_between_node1_node2(event,node_instance))
         self.window_for_edge_options=self.canvas.create_window(x1+100,y2+100,window=self.node_connection_options_frame,width=frame_width,height=frame_height)
         #listbox.bind("<<ListboxSelect>>",lambda event: self.connect_edge_to_respective_node(event,node_instance,self.window_for_edge_options))
         for label, connecting_node_instance in self.network_node_instances_labels.items():
             if connecting_node_instance not in node_instance.connecting_node_instance_list and connecting_node_instance != node_instance:
                 node_id=connecting_node_instance.node_id
-                listbox.insert(END,literal_box_entry+str(node_id))
+                listbox.insert(END,box_entry_literal+str(node_id))
         #if len(self.network_node_instances_labels)==1 and
 
 
+
+    def show_ports_options_between_node1_node2(self,x1,y2,listbox,node_instance,box_entry_literal):
+        indices=listbox.curselection()
+        print("indices are ",indices)
+        port_option_frame = Frame(self.canvas,background="orange")
+        frame_1 = Frame(port_option_frame, background="red", bd=2)
+        frame_2 = Frame(port_option_frame, background="red", bd=2)
+        connecting_node_instances=[]
+        rowspan=0
+        left_labels_list = []
+        #left_listbox_list=[]
+        left_listbox=Listbox(frame_1)
+        print(indices)
+        for index in indices:
+            print(listbox.get(index))
+            node_2=listbox.get(index)
+            print(node_2)
+            node_2_id=int(node_2[len(box_entry_literal):])
+            connecting_node_instance=self.topology.node_instance_dictionary_by_node_id[node_2_id]
+            connecting_node_instances.append(connecting_node_instance)
+            #node_label=Label(frame_1,text="Node "+node_2,bg="gold")
+            #left_listbox.insert(END,node_2)
+            #node_label.pack(side="left")
+            #node_label.grid(row=rowspan,column=0)
+            #node_label.pack(side="top")
+            #listbox=Listbox(frame_1)
+            for port in connecting_node_instance.port_list:
+                print("port is ",str(port.port_id))
+                label=Label(frame_1,text=str(port.port_id),bg="yellow")
+                left_labels_list.append(label)
+                left_listbox.insert(END,node_2+" :- "+str(port.port_id))
+                #label.pack(side="left")
+                #label.grid(row=rowspan,column=0,sticky=N+E+W+S)
+                #label.pack(side="top")
+                rowspan+=1
+            #left_listbox_list.append(listbox)
+            left_listbox.pack(side="top")
+            rowspan+=1
+        right_labels_list=[]
+        for connected_node in node_instance.connecting_node_instance_list:
+            for port in connected_node.port_list:
+                print("port is ",str(port.port_id))
+                label = Label(frame_1, text=str(port.port_id),bg="yellow")
+                left_labels_list.append(label)
+                # label.pack(side="left")
+                #label.grid(row=rowspan, column=0,sticky=N+E+W+S)
+                label.pack(side="top")
+                rowspan += 1
+        rowspan=0
+        right_list_box=Listbox(frame_2)
+        label=Label(frame_2,text="Current Node",bg="gold")
+        #label.grid(row=rowspan,column=1,sticky=N+E+W+S)
+        label.pack(side="top")
+        for port in node_instance.port_list:
+            print(port)
+            label=Label(frame_2,text=str(port.port_id),bg="cyan")
+            right_labels_list.append(label)
+            right_list_box.insert(END,str(port.port_id))
+            #label.pack(side="left")
+            #label.grid(row=rowspan,column=1,sticky=N+E+W+S)
+            #label.pack(side="top")
+            rowspan+=1
+        right_list_box.pack(side="top")
+        frame_1.pack(side="left")
+        frame_2.pack(side="right")
+
+        self.port_option_window=self.canvas.create_window(x1+100,y2+100,window=port_option_frame,width=200,height=200)
+
+
+    def select_ports_for_port_connection(self):
+        pass
+
+    def dedicate_ports_for_ports_connection(self):
+        pass
+
+    def add_back_ports_to_node(self):
+        pass
+
     #def connect_edge_to_respective_node(self,event,node_instance,window_label):
-    def connect_edge_to_respective_node(self, widget, node_instance, window_label,literal_box_entry):
+    def connect_edge_to_respective_node(self, widget, node_instance, window_label,box_entry_literal):
         #widget=event.widget
 
         #index=int(widget.curselection()[0])
         indices=widget.curselection()
         for index in indices:
             connecting_to_node=widget.get(int(index))
-            connecting_node_id=int(connecting_to_node[len(literal_box_entry):])
+            connecting_node_id=int(connecting_to_node[len(box_entry_literal):])
             connecting_node_instance=self.topology.node_instance_dictionary_by_node_id[connecting_node_id]
             self.canvas.delete(window_label)
             self.create_edge_between_two_nodes(node_instance,connecting_node_instance)
@@ -305,7 +479,7 @@ class Network_Frame():
             self.canvas_coords = coords
             # Core_DC_Node
         elif name == "Edg":
-            node = Edge_Node(self.topology.node_numbers, 0, 0)
+            node = Edge_Node(0,self.topology.node_numbers,  0)
             self.canvas_coords = coords
             # Edge_DC_Node
 
@@ -378,33 +552,33 @@ class Network_Frame():
 
     def create_window_pane_for_data_center_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_label_image(data_center_node_type)
+        self.create_node_option_image(data_center_node_type)
 
     def create_window_pane_for_client_server_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_label_image(client_server_node_type)
+        self.create_node_option_image(client_server_node_type)
 
     def create_window_pane_for_general_nodes_label(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_label_image(general_node_type)
+        self.create_node_option_image(general_node_type)
 
     def create_window_pane_for_sdn_network_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_label_image(sdn_node_type)
+        self.create_node_option_image(sdn_node_type)
 
     def create_window_pane_for_probe_network_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_label_image(probe_node_type)
+        self.create_node_option_image(probe_node_type)
 
     def create_window_pane_for_generic_network_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_label_image(network_node_type)
+        self.create_node_option_image(network_node_type)
 
 
         # self.label_entry = Label(self.canvas, text=node_property)
         # window1 = self.canvas.create_window(100, canvas_height - 500, window=self.label_entry, height=200, width=200)
 
-    def create_node_label_image(self, node_type_dictionary):
+    def create_node_option_image(self, node_type_dictionary):
         a = b = 50
         label_color="DarkOliveGreen1"
         node_label_color="SandyBrown"
@@ -478,6 +652,7 @@ class Network_Frame():
     def clear_all_boxes_on_canvas(self):
         try:
             self.information_frame.remove_canvas_window(self.canvas)
+            self.canvas.delete(self.port_option_window)
         except:
             print("\n")
 
@@ -488,32 +663,35 @@ class Network_Frame():
 
 
     def node_clicked(self, event):
+        if self.service_counter == 1:
+            self.node_property_alter(event.x,event.y)
 
-        self.reset_entries_and_labels()
-        self.clear_all_boxes_on_canvas()
-        self.clear_all_information_frame_boxes()
-        self.remove_edge_option_canvas_window()
-        x, y = event.x, event.y
-        item = self.canvas.find_closest(x, y)
-        # return  item[0]
-        # print("item is ",item[0])
-        try:
-            self.current_label = item[0]
-            # def move_node(self,event,node_label):
-            # entry=Entry(self.canvas,text="node created",width=20)
-            # print(event.widget)
-            current_node_instance = self.network_node_instances_labels[self.current_label]
-            self.delete_edge_entry_labels(current_node_instance)
-            self.create_edge_entry_point(current_node_instance)
-        except:
-            print("new node is created")
-        # self.information_frame.node_property_display.delete(1.0, END)
-        # self.set_information_frame_text_box_for_node_information()
-        # self.display_information_frame_text_box_for_node_information()
-        self.canvas.update()
+        else:
+            self.reset_entries_and_labels()
+            self.clear_all_boxes_on_canvas()
+            self.clear_all_information_frame_boxes()
+            self.remove_edge_option_canvas_window()
+            x, y = event.x, event.y
+            item = self.canvas.find_closest(x, y)
+            # return  item[0]
+            # print("item is ",item[0])
+            try:
+                self.current_label = item[0]
+                # def move_node(self,event,node_label):
+                # entry=Entry(self.canvas,text="node created",width=20)
+                # print(event.widget)
+                current_node_instance = self.network_node_instances_labels[self.current_label]
+                self.delete_edge_entry_labels(current_node_instance)
+                self.create_edge_entry_point(current_node_instance)
+            except:
+                print("new node is created")
+            # self.information_frame.node_property_display.delete(1.0, END)
+            # self.set_information_frame_text_box_for_node_information()
+            # self.display_information_frame_text_box_for_node_information()
+            self.canvas.update()
 
-        # coords=500,500,530,530
-        # self.canvas.create_oval(coords)
+            # coords=500,500,530,530
+            # self.canvas.create_oval(coords)
 
     def reset_entries_and_labels(self):
 
@@ -521,44 +699,62 @@ class Network_Frame():
         for window in self.entry_window:
             self.canvas.delete(window)
         self.entry_window = []
+        try:
+            self.canvas.delete(self.port_option_window)
+        except:
+            print("port connection window not there on canvas")
         # self.information_frame.node_property_display.delete(1.0,END)
         # self.canvas.delete(self.node_entry)
 
-    def node_clicked_on_canvas(self, event):
-        # self.delete_all_edge_entry_labels()
-        self.reset_entries_and_labels()
-        self.clear_all_boxes_on_canvas()
-        self.clear_all_information_frame_boxes()
-        self.remove_edge_option_canvas_window()
-        x, y = event.x, event.y
+    def node_property_alter(self,x,y):
         item = self.canvas.find_closest(x, y)
-        # return  item[0]
-        # print("item is ",item[0])
-        current_node_instance = self.network_node_instances_labels[self.current_label]
-        self.delete_edge_entry_labels(current_node_instance)
-        # self.create_edge_entry_point(event,current_node_instance)
         self.current_label = item[0]
-        # self.current_node_instance=current_node_instance
-        # self.node_entry=Entry(self.canvas)
-        # window=self.canvas.create_window(x-100,y,window=self.node_entry,height=70,width=150)
-        # self.entry_window.append(window)
-        # node_property="Longitude is "+ str(current_node_instance.longitude), "\nLatitude is "+str(current_node_instance.latitude)
-        # self.node_entry.insert(0,node_property)
-        # self.information_frame.node_property_display.insert(END,node_property)
-        self.set_information_frame_text_box_for_node_information(current_node_instance)
-        # print("node property is ")
+        current_node_instance = self.network_node_instances_labels[self.current_label]
+        self.canvas.itemconfig(self.current_label, fill=service_color)
+        self.node_dict_for_service[self.current_label] = current_node_instance
 
-        self.create_edge_entry_point(current_node_instance)
-        #self.node_entry.update()
-        # print(self.current_label)
 
-        # def move_node(self,event,node_label):
-        # entry=Entry(self.canvas,text="node created",width=20)
-        # print(event.widget)
 
-        self.canvas.update()
 
-    '''
+    def node_clicked_on_canvas(self, event):
+        #self.delete_all_edge_entry_labels()
+        if self.service_counter == 1:
+            self.node_property_alter(event.x,event.y)
+        else:
+
+            self.reset_entries_and_labels()
+            self.clear_all_boxes_on_canvas()
+            self.clear_all_information_frame_boxes()
+            self.remove_edge_option_canvas_window()
+            x, y = event.x, event.y
+            item = self.canvas.find_closest(x, y)
+            # return  item[0]
+            # print("item is ",item[0])
+            current_node_instance = self.network_node_instances_labels[self.current_label]
+            self.delete_edge_entry_labels(current_node_instance)
+            # self.create_edge_entry_point(event,current_node_instance)
+            self.current_label = item[0]
+            # self.current_node_instance=current_node_instance
+            # self.node_entry=Entry(self.canvas)
+            # window=self.canvas.create_window(x-100,y,window=self.node_entry,height=70,width=150)
+            # self.entry_window.append(window)
+            # node_property="Longitude is "+ str(current_node_instance.longitude), "\nLatitude is "+str(current_node_instance.latitude)
+            # self.node_entry.insert(0,node_property)
+            # self.information_frame.node_property_display.insert(END,node_property)
+            self.set_information_frame_text_box_for_node_information(current_node_instance)
+            # print("node property is ")
+
+            self.create_edge_entry_point(current_node_instance)
+            #self.node_entry.update()
+            # print(self.current_label)
+
+            # def move_node(self,event,node_label):
+            # entry=Entry(self.canvas,text="node created",width=20)
+            # print(event.widget)
+
+            self.canvas.update()
+
+        '''
 
 class Display_Node():
     def __init__(self,network_frame):#canvas,node_label_dictionary,current_label,information_frame):#,canvas,node_label_dictionary,current_label)::
@@ -585,6 +781,7 @@ class Display_Node():
             radius = int(attributes["radius"])
 
             coords = x - radius, y - radius, x + radius, y + radius
+            #coords=x,y,x+20,y+10
             new_node_instance = self.create_node_in_graph(node, attributes, coords)
             # print(new_node_instance)
             # identifying, if any node is present in the background. for drop  and add edge to work
@@ -592,8 +789,8 @@ class Display_Node():
             coords = self.identify_nodes_on_position(new_node_instance, event, coords)
 
             new_node_instance.canvas_coords = coords
-
-            new_node_label = self.canvas.create_oval(coords, fill=attributes["color"])
+            new_node_instance.color=attributes["color"]
+            new_node_label = self.create_polygon_node(coords,new_node_instance.color)#canvas.create_oval(coords, fill=attributes["color"])
         except:
             length = int(attributes["length"])
             breadth = int(attributes["breadth"])
@@ -603,17 +800,17 @@ class Display_Node():
 
             coords = self.identify_nodes_on_position(new_node_instance, event, coords)
             new_node_instance.canvas_coords = coords
-            new_node_label = self.canvas.create_rectangle(coords, fill=attributes["color"])
+            new_node_instance.color=attributes["color"]
+            new_node_label = self.canvas.create_rectangle(coords, fill=new_node_instance.color)
         # self.canvas.bind(new_node_label, "<Motion>", self.move_cursor_over_node)
 
 
         self.create_node_instance_label_on_canvas(new_node_instance)
 
         try:
-            print("trace")
-            print(coords, new_node_instance)
-            print("tr", type(self.connecting_node_instance), self.connecting_node_instance, type(new_node_instance),
-                  new_node_instance)
+            #print("trace")
+            #print(coords, new_node_instance)
+            #print("tr", type(self.connecting_node_instance), self.connecting_node_instance, type(new_node_instance),new_node_instance)
             if self.connecting_node_instance != "":
                 connecting_node_instance=self.connecting_node_instance
                 self.create_edge_between_drop_and_positioned_nodes(new_node_instance)
@@ -693,7 +890,7 @@ class Display_Node():
             for j in range(8):
                 octet=int(binary_string[i+j])*pow(2,7-j) + octet
                 octet=int(octet)
-            print(octet)
+            #print(octet)
             ip_address += str(octet)
             if(i+8 < len(binary_string)):
                 ip_address+="."
@@ -744,7 +941,7 @@ class Display_Node():
         node_property = self.node_entry.get()
         # white_space = [" ", ",", "\t", "\n"]
         node_property = node_property.split(" ")
-        print(node_property)
+        #print(node_property)
         current_node_instance.longitude = node_property[0]
         current_node_instance.latitude = node_property[1]
         self.entry_window.remove(window1)
@@ -806,69 +1003,77 @@ class Node_Movements():
     '''
 
     def move_node(self, event):  # ,new_node_label,text,new_node_instance,attributes):
-        self.reset_entries_and_labels()
-        self.clear_all_information_frame_boxes()
-        #self.clear_all_boxes_on_canvas()
 
-        print("move node method")
-        print("current label is ", self.current_label)
-        node = self.node_label_dictionary[self.current_label]
-        current_node_instance = self.network_node_instances_labels[self.current_label]
+        if self.service_counter ==1 :
+            self.node_property_alter(event.x,event.y)
 
-        self.remove_node_label_window(current_node_instance)
-        self.network_node_instances_labels.pop(self.current_label)
+        else:
+            self.reset_entries_and_labels()
+            self.clear_all_information_frame_boxes()
+            #self.clear_all_boxes_on_canvas()
 
-        self.delete_edge_entry_labels(current_node_instance)
+            #print("move node method")
+            #print("current label is ", self.current_label)
+            node = self.node_label_dictionary[self.current_label]
+            current_node_instance = self.network_node_instances_labels[self.current_label]
 
-        # text=self.text_label_dictionary[self.current_label]
-        attributes = node_type[node]
-        self.canvas.delete(self.current_label)
-        # self.canvas.delete(text)
-        # self.text_label_dictionary.pop(self.current_label)
-        self.node_label_dictionary.pop(self.current_label)
-        x, y = event.x, event.y
-        try:
-            radius = int(attributes["radius"])
-            coords = x - radius, y - radius, x + radius, y + radius
+            self.remove_node_label_window(current_node_instance)
+            self.network_node_instances_labels.pop(self.current_label)
 
-            # updating the coords for the moved node
-            current_node_instance.canvas_coords = coords
-            new_node_label = self.canvas.create_oval(coords, fill=attributes["color"])
-        except:
-            length = int(attributes["length"])
-            breadth = int(attributes["breadth"])
-            coords = x - length / 2, y - breadth / 2, x + length / 2, y + breadth / 2
-            current_node_instance.canvas_coords = coords
-            new_node_label = self.canvas.create_rectangle(coords, fill=attributes["color"])
-        self.create_edge_entry_point(current_node_instance)
+            self.delete_edge_entry_labels(current_node_instance)
 
-        self.create_node_instance_label_on_canvas(current_node_instance)
+            # text=self.text_label_dictionary[self.current_label]
+            attributes = node_type[node]
+            self.canvas.delete(self.current_label)
+            # self.canvas.delete(text)
+            # self.text_label_dictionary.pop(self.current_label)
+            self.node_label_dictionary.pop(self.current_label)
+            x, y = event.x, event.y
+            try:
+                radius = int(attributes["radius"])
+                coords = x - radius, y - radius, x + radius, y + radius
+                #coords=x,y,x+20,y+10
 
-        self.set_node_information_window_box(current_node_instance)
+                # updating the coords for the moved node
+                current_node_instance.canvas_coords = coords
+                current_node_instance.color=attributes["color"]
+                new_node_label = self.move_polygon_node(coords,current_node_instance.color)#canvas.create_oval(coords, fill=attributes["color"])
+            except:
 
-        # self.canvas.bind(new_node_label, "<Motion>", lambda event:self.move_cursor_over_node(event))
+                length = int(attributes["length"])
+                breadth = int(attributes["breadth"])
+                coords = x - length / 2, y - breadth / 2, x + length / 2, y + breadth / 2
+                current_node_instance.canvas_coords = coords
+                current_node_instance.color=attributes["color"]
+                new_node_label = self.canvas.create_rectangle(coords, fill=current_node_instance.color)
+            self.create_edge_entry_point(current_node_instance)
 
-        self.network_node_instances_labels[new_node_label] = current_node_instance
-        self.node_label_dictionary[new_node_label] = node
-        self.current_label = new_node_label
-        # self.canvas.bind(new_node_label,"<Motion>",self.move_cursor_over_node)
-        # text=self.canvas.create_text(x,y,text=attributes["name"])
-        # self.text_label_dictionary[self.current_label]=text
-        # print("ffdsf")
-        # self.canvas.move(new_node_label,x,y)
-        # self.canvas.move(text,x,y)
-        # self.canvas.create_text(x,y,text=text)
-        self.canvas.tag_bind(new_node_label, "<Button-1>",
-                             lambda event: self.node_clicked(event))  # , self.current_label,text,x,y))
-        # self.canvas.tag_bind(text, "<Button-1>", lambda event: self.node_tinkered(event, new_node_label,text,x,y))
-        self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
-                             self.move_node)  # lambda event : self.move_node(event,self.current_label,text.text,new_node_instance,attributes))
-        self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event: self.create_equipment_selection_box(event,new_node_label, current_node_instance))
+            self.create_node_instance_label_on_canvas(current_node_instance)
 
-        self.canvas.tag_bind(new_node_label, "<Button-3>", lambda event: self.show_connecting_node_options(event,current_node_instance.canvas_coords,current_node_instance))
-        self.move_edges(current_node_instance)
-        self.canvas.update()
-        # pass
+            self.set_node_information_window_box(current_node_instance)
+
+            # self.canvas.bind(new_node_label, "<Motion>", lambda event:self.move_cursor_over_node(event))
+
+            self.network_node_instances_labels[new_node_label] = current_node_instance
+            self.node_label_dictionary[new_node_label] = node
+            self.current_label = new_node_label
+            # self.canvas.bind(new_node_label,"<Motion>",self.move_cursor_over_node)
+            # text=self.canvas.create_text(x,y,text=attributes["name"])
+            # self.text_label_dictionary[self.current_label]=text
+            # print("ffdsf")
+            # self.canvas.move(new_node_label,x,y)
+            # self.canvas.move(text,x,y)
+            # self.canvas.create_text(x,y,text=text)
+            self.canvas.tag_bind(new_node_label, "<Button-1>",
+                                 lambda event: self.node_clicked(event))  # , self.current_label,text,x,y))
+            # self.canvas.tag_bind(text, "<Button-1>", lambda event: self.node_tinkered(event, new_node_label,text,x,y))
+            self.canvas.tag_bind(new_node_label, "<ButtonRelease-1>",
+                                 self.move_node)  # lambda event : self.move_node(event,self.current_label,text.text,new_node_instance,attributes))
+            self.canvas.tag_bind(new_node_label,"<Double-1>",lambda event: self.create_equipment_selection_box(event,new_node_label, current_node_instance))
+
+            self.canvas.tag_bind(new_node_label, "<Button-3>", lambda event: self.show_connecting_node_options(event,current_node_instance.canvas_coords,current_node_instance))
+            self.move_edges(current_node_instance)
+            self.canvas.update()
 
     def create_edge_entry_point(self, current_node_instance):
         print("creating edge entry point")
@@ -883,7 +1088,7 @@ class Node_Movements():
         item = self.canvas.find_closest(x, y)
         node_label = item[0]
         connecting_node_instance = self.network_node_instances_labels[node_label]
-        print("edge created jere mnds", connecting_node_instance)
+        #print("edge created jere mnds", connecting_node_instance)
         self.create_edge_between_two_nodes(current_node_instance, connecting_node_instance)
         # self.delete_edge_entry_labels()
 
@@ -956,7 +1161,6 @@ class Node_Movements():
                     print("dangling edge deleted")
             '''
             self.create_edge_between_two_nodes(current_node_instance, connecting_node_instance)
-        pass
 
     def node_tinkered(self, event, new_node_label, text, x, y):
         # print(event.widget)

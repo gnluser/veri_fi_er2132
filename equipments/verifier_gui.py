@@ -2,6 +2,8 @@
 from all_dependencies import *
 from info_frame import *
 from nw_frame import *
+from service_module import *
+
 #from equipments import *
 
 # from network_equipment import *
@@ -104,7 +106,6 @@ class Load_Network_Information():
         self.network_deployed_equipment_dictionary = {}
         ######self.network_equipment_dictionary = {}
         self.current_deployed_equipments = []
-
         self.deployed_nodes = {}
         self.deployed_equipments = []
 
@@ -114,7 +115,7 @@ class Load_Network_Information():
         try:
             self.create_minimal_topology()
         except:
-            print("erorr in topology creation")
+            print("error in topology creation")
         try:
             self.load_current_deployed_topology()
         except:
@@ -342,24 +343,34 @@ class Network():
         # self.node_list=self.topology.nodes_list
         # self.edge_list=self.topology.edge_list
         # print(self.edge_list)
-        # self.display_instance()
+        # self.start_project()
 
-    def display_instance(self, master, le):
+    def start_project(self, master, le):
         # master=Tk()
         self.network_frame = Network_Frame(master, self.topology, self.simulation)
         self.information_frame = Information_Frame(self.network_frame.canvas, le, self.simulation, self.topology)
         self.network_frame.information_frame = self.information_frame
         self.information_frame.network_frame = self.network_frame
-        self.node_frame = Node_Frame(master, self.network_frame, self.simulation)
-
+        self.node_frame = Node_Frame(master, self.network_frame, self.simulation,self.topology)
+        self.name_of_project()
 
         # self.information_frame.load_frame()
         self.network_frame.show_topology_on_frame()
         self.network_frame.node_numbers = self.topology.graph.number_of_nodes()
         self.node_frame.create_window_pane_for_network_node_labels()
 
+        self.node_frame.create_service_box()
+
         self.node_frame.create_onboarding_portal()
 
+
+
+    def name_of_project(self):
+        self.verifier_ballot = Frame(self.network_frame.canvas)
+        self.verifier_window=self.network_frame.canvas.create_window(canvas_width/2,100,window=self.verifier_ballot,width=200,height=100)
+        self.verifier_ballot.pack()
+        self.verifier_label=Label(self.verifier_ballot,text="Verifier")
+        self.verifier_label.pack()
 
     def equipment_creation_handler(self, topology, node_instance):
         pass
@@ -372,20 +383,82 @@ class Network():
 
 
 class Node_Frame():
-    def __init__(self, master, network_frame, simulation):
+    def __init__(self, master, network_frame, simulation,topology):
         self.simulation = simulation
         self.master = master
         self.network_frame = network_frame
+        self.topology=topology
 
+
+
+    def delete_service_frame(self):
+        self.network_frame.canvas.delete(self.service_window)
+        self.rollback_nodes_canvas_attributes()
+
+    def add_service_frame(self):
+        self.service_window=self.network_frame.canvas.create_window(canvas_width-100,100,window=self.service_frame,width=100,height=100)
+        self.firstbutton.configure(command=lambda: self.selecting_left_nodes_for_service())
+        self.scndbutton.configure(command=lambda: self.selecting_right_nodes_for_service())
+        self.node_selection_button.configure(command=lambda: self.network_frame.allow_node_selection_for_service())
+        self.service_frame.pack()
+        self.node_selection_button.pack(side="top")
+        self.firstbutton.pack(side="top")
+        self.scndbutton.pack(side="top")
+        self.service_list_box.pack(side="top")
+        self.identify_service_compatibility_button.pack(side="top")
+        self.select_services_button.pack(side="top")
+        self.identify_service_compatibility_button.configure(command=lambda:self.identify_service_compatibility(self.service_list_box))
+        self.select_services_button.configure(command=lambda: self.start_service(self.service_list_box))
+
+
+    def identify_service_compatibility(self,listbox):
+        for service_name in listbox:
+
+            nodes_pair=[(x,y) for x in self.network_frame.left_nodes_dict.values() for y in self.network_frame.right_nodes_dict.values()]
+            for left_node,right_node in nodes_pair:
+                s=self.topology.graph.all_shortest_path(left_node,right_node)
+                print("For nodes ",left_node,"\t",right_node," shortest paths are ",s)
+
+
+
+    def start_service(self,listbox):
+        indices = listbox.curselection()
+
+        for index in indices:
+            service_name=listbox.get(index)
+            Service(service_name)
+
+    def create_service_box(self):
+        self.service_frame=Frame(self.network_frame.canvas)
+        self.node_selection_button=Button(self.service_frame,text="Select nodes for Service",bg=button_color)
+        self.firstbutton=Button(self.service_frame,text="Click for Ist set",bg=button_color)
+        self.scndbutton=Button(self.service_frame,text="Click for 2nd set",bg=button_color)
+        self.service_option_label=Label(self.service_frame,text="Service Options",bg=button_color)
+        self.service_list_box=Listbox(self.service_frame,selectmode=MULTIPLE,bg=entry_color)
+        for item in service_options_list:
+            self.service_list_box.insert(END,item)
+        self.select_services_button=Button(self.service_frame,text="Start Services",bg=button_color)
+        self.identify_service_compatibility_button=Button(self.service_frame,text="Identify Service Comaptibilty",bg=button_color)
+        #self.service_list_box.bind("<<ListboxSelect>>")
+
+
+    def selecting_right_nodes_for_service(self):
+        self.network_frame.right_nodes_dict=self.network_frame.node_dict_for_service
+        self.network_frame.node_dict_for_service={}
+        #self.rollback_nodes_canvas_attributes()
+
+    def selecting_left_nodes_for_service(self):
+        print("ist node button pressed")
+        self.network_frame.left_nodes_dict=self.network_frame.node_dict_for_service
+        self.network_frame.node_dict_for_service={}
+
+    def rollback_nodes_canvas_attributes(self):
+        self.network_frame.close_node_selection_for_service()
 
 
     def create_onboarding_portal(self):
         self.onboarding_portal_flag=0
-        self.verifier_ballot = Frame(self.network_frame.canvas)
-        self.verifier_window=self.network_frame.canvas.create_window(canvas_width/2,100,window=self.verifier_ballot,width=200,height=100)
-        self.verifier_ballot.pack()
-        self.verifier_label=Label(self.verifier_ballot,text="Verifier")
-        self.verifier_label.pack()
+
         #self.onboarding_portal_button=Button(self.onboarding_button_frame,text="Onboarding Portal",command=self.add_onboarding)
         #self.hide_onboarding_button=Button(self.onboarding_button_frame,text="Hide Onboarding",command=self.remove_onboarding)
         #self.onboarding_portal_button.pack(side="top")
@@ -429,6 +502,9 @@ class Node_Frame():
         nodemenubar.add_command(label="Show Information",
                                 command=self.network_frame.information_frame.create_info_frame)
         nodemenubar.add_command(label="Hide Information",command=self.network_frame.information_frame.hide_info_frame)
+        nodemenubar.add_command(label="Service",command=self.add_service_frame)
+        nodemenubar.add_command(label="Service Frame Hide",command=self.delete_service_frame)
+
         self.master.config(menu=nodemenubar)
 
 
@@ -440,7 +516,8 @@ network = Network(le.topology, simulation)
 master = Tk()
 master.title("Verifier")
 master.minsize(500, 500)
-network.display_instance(master, le)
+network.start_project(master, le)
+
 # simulation.environment.run(until=100)
 master.mainloop()
 

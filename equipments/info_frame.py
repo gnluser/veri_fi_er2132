@@ -25,7 +25,7 @@ class Information_Frame():
 
 
     def create_info_frame(self):
-        print("flag uis :",self.info_frame_flag)
+        #print("flag uis :",self.info_frame_flag)
         if self.info_frame_flag == 0:
             self.window_for_information_frame = self.canvas.create_window(125, 600, window=self.frame, width=250, height=500)
             self.show_info_frame_widgets()
@@ -66,9 +66,11 @@ class Information_Frame():
 
         row_span += 9
 
-        self.display_subequipment_label.grid(row=row_span + 1, column=0, columnspan=2, sticky=N + E + S + W, pady=1)
-        self.display_properties_subequipment_box.grid(row=row_span + 2, column=0, columnspan=2, rowspan=1,
-                                                  sticky=N + E + S + W, pady=1)
+        #self.display_subequipment_label.grid(row=row_span + 1, column=0, columnspan=2, sticky=N + E + S + W, pady=1)
+        #self.display_properties_subequipment_box.grid(row=row_span + 2, column=0, columnspan=2, rowspan=1,sticky=N + E + S + W, pady=1)
+        self.port_option_label.grid(row=row_span+1,column=0,columnspan=2,sticky=N +E+W+S,pady=1)
+        self.port_option_list_box.grid(row=row_span+2, column=0, columnspan=2, rowspan=1,sticky=N + E + S + W, pady=1)
+
 
     def create_info_frame_widgets(self):
         button_color = "sienna1"  # "thistle1"
@@ -131,8 +133,20 @@ class Information_Frame():
         self.display_subequipment_label = Label(self.frame, text="Subequipment Attributes", bg=info_label_color)
         self.display_properties_equipment_box = Text(self.frame)
         self.display_properties_subequipment_box = Text(self.frame,height=100,width=25, bg=text_bg_color)
+
+        #self.subequipment_option_label=Label(self.frame,text="Subequipments",bg=label_color)
+        self.port_option_label=Label(self.frame,text="Ports and Protocols",bg=label_color)
+        #self.subequipment_option_list_box=Listbox(self.frame,bg=text_bg_color)
+        self.port_option_list_box=Listbox(self.frame,bg=text_bg_color)
+        #self.subequipment_option_list_box.bind("<<ListboxSelect>>",lambda event: self.load_port_information(event))
         # self.display_equipment_label.grid(row=row_span+9,column=0,columnspan=1,sticky=N+E+S+W,pady=1)
         # self.display_properties_equipment_box.grid(row=row_span+1,column=0,columnspan=1,rowspan=5,sticky=N+E+S+W,pady=1)
+
+    def load_port_information(self,node_instance):
+        self.port_option_list_box.delete(0,END)
+        for port in node_instance.ports_list:
+            self.port_option_list_box.insert(END,port.id,"\t",port.name)
+
 
     def hide_info_frame(self):
         self.canvas.delete(self.window_for_information_frame)
@@ -191,7 +205,7 @@ class Information_Frame():
         #self.vendor_yscrollbar.pack(side=RIGHT,fill=Y)
         #self.vendor_xscrollbar.config(command=self.vendor_list_box.xview)
         #self.vendor_yscrollbar.config(command=self.vendor_list_box.yview)
-        self.vendor_list_box.bind('<<ListboxSelect>>',
+        self.vendor_list_box.bind('<<Select>>',
                                   lambda event: self.equipment_load(event, canvas, event.x, event.y, node_instance))
 
     def create_equipment_list_box(self, canvas, x, y, node_instance):  # ,node_label):
@@ -253,7 +267,7 @@ class Information_Frame():
 
         for index in indices:
             subpart=widget.get(index)
-            print(subpart)
+            #print(subpart)
             self.add_subpart_to_equipment(subpart)
         canvas.delete(self.subpart_window)
 
@@ -264,6 +278,9 @@ class Information_Frame():
         ports = self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[subpart][ports]
         subequipment = ""
         self.current_node_instance.update_ports(ports,subpart,subequipment,self.new_equipment)
+        self.reset_subequipment_property_box()
+        port=self.current_node_instance.port_list
+        self.display_properties_subequipment_box.insert(END, "Ports" + " :-\n" + port + "\n")
 
     def remove_list_box(self, list_box):
         list_box.destroy()
@@ -315,7 +332,7 @@ class Information_Frame():
 
         else:
             for subeqpmnt_name in subequipment_supported:
-                print(subeqpmnt_name)
+                #print(subeqpmnt_name)
                 self.subequipment_list_box.insert(END,subeqpmnt_name)
 
             #    if self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[subeqpmnt_name][subeqpmnt_subpart] != Default:
@@ -332,36 +349,49 @@ class Information_Frame():
 
     def display_subparts_of_respective_subequipments(self,event,canvas,node_instance,x,y):
         new_subeqpmnt_option_list=event.widget.curselection()
-        print("selected equipments weee", self.selected_subequipment_index_list)
-        print("current scenario is ",new_subeqpmnt_option_list)
+        print("selected equipments : ", self.selected_subequipment_index_list)
+        #print("current scenario is ",new_subeqpmnt_option_list)
         new_subeqpmnt_option=[x for x in new_subeqpmnt_option_list if x not in self.selected_subequipment_index_list]
-        print("alter add ", new_subeqpmnt_option)
+        #print("alter add ", new_subeqpmnt_option)
         if new_subeqpmnt_option != "":
             for x in new_subeqpmnt_option:
                 new_subequipment=event.widget.get(x)
                 #print(self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary)
+                subequipment=self.create_sub_equipment(new_subequipment)
                 if new_subequipment != Default :
                     #print(self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment])
-                    self.call_subpart_create_function(new_subequipment,canvas, node_instance, x, y)
+
+                    self.call_subpart_create_function(subequipment,canvas, node_instance, x, y)
                     self.selected_subequipment_index_list.append(x)
                 else :
                     print("subequipment added")
-                    self.create_sub_equipment(Default)
 
         else:
             print("subequipment is popped")
 
-        print("currently",new_subeqpmnt_option_list)
+        ####print("currently",new_subeqpmnt_option_list)
         subequipment_unselected=[x for x in self.selected_subequipment_index_list if x not in new_subeqpmnt_option_list]
-        print("node popped ",subequipment_unselected)
+        #print("node popped ",subequipment_unselected)
         for subeqpmnt in subequipment_unselected:
+            print("node popped ", subeqpmnt)
             self.selected_subequipment_index_list.remove(subeqpmnt)
-
         print(self.selected_subequipment_index_list)
 
 
-    def create_sub_equipment(self,subequipment):
-        self.add_ports_and_properties_to_equipment(self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[self.new_equipment.name],self.new_equipment,subequipment)
+    def create_sub_equipment(self,subequipment_name):
+        equipment_dictionary=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[self.new_equipment.name]
+        if subequipment_name == Default:
+            subequipment_dictionary=self.new_equipment.equipment_properties_dictionary
+        else:
+            subequipment_dictionary=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[subequipment_name]
+        subequipment=SubEquipment()
+        subequipment.name=subequipment_name
+        subequipment.subequipment_properties_dictionary=subequipment_dictionary
+        if subequipment_dictionary[subeqpmnt_subpart] == "":
+            #self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[sesubeqpmnt_subpart]
+            self.add_ports_and_properties_to_equipment(equipment_dictionary,self.new_equipment,subequipment)
+        return subequipment
+
 
 
     def add_ports_and_properties_to_equipment(self,equipment_dictionary,equipment,subequipment):
@@ -369,59 +399,76 @@ class Information_Frame():
         port=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[self.new_equipment.name][ports]
         subpart = ""
         self.current_node_instance.update_ports(port,subpart,subequipment,equipment)
+        self.reset_subequipment_property_box()
+        for port in self.current_node_instance.port_list:
+            self.display_properties_subequipment_box.insert(END, str(port.port_id) + "\n")
+
         #else:
         #    pass
 
 
     def call_subpart_create_function(self,new_subequipment,canvas,node_instance,x,y):
-        print(self.current_vendor_instance)
-        print(new_subequipment)
-        subpart_dictionary = self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment]#[subeqpmnt_subpart]
-        print(self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary)
-        #print(self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment])
-        self.create_subpart_window( canvas, x, y, node_instance)
+        #print(self.current_vendor_instance)
+        #print(new_subequipment)
+        if new_subequipment.name != "":
+            subpart_dictionary = self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment.name]#[subeqpmnt_subpart]
+            #print(self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary)
+            #print(self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment])
+            self.create_subpart_window( canvas, x, y, node_instance)
 
 
     def load_subeqpmnt_property_window_box(self, canvas, equipment_name):#, node_instance):
 
-        print("subequipments selected")
         try:
             self.reset_subequipment_property_box()
 
         except:
             print("First run, subequipment property box is empty")
 
-
         indices = self.subequipment_list_box.curselection()
         for index in indices:
-            new_subequipment_name= self.subequipment_list_box.get(int(index))
-
+            subpart = ""
+            #print("index value is ",index)
+            new_subequipment_name= self.subequipment_list_box.get(index)
+            print("Subequipment selected is ",new_subequipment_name)
+            subequipment = SubEquipment()
+            subequipment.name = new_subequipment_name
             if new_subequipment_name == Default:
                 #ports=self.current_node_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[ports]
                 new_subequipment=Default
                 #self.current_node_instance.update_ports(ports)
 
                 subeqpmnt_property=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[equipment_name]
-                for k,v in subeqpmnt_property.items():
-                    print("equipment property ",k,"\t",v)
+                subequipment.subequipment_properties_dictionary = subeqpmnt_property
+                #for k,v in subeqpmnt_property.items():
+                #    print("equipment property ",k,"\t",v)
+
                 port=subeqpmnt_property[ports]
                 protocols=subeqpmnt_property[protocol]
-                self.display_properties_subequipment_box.insert(END, "Ports" + " :-\n" + port+"\n")
-                self.display_properties_subequipment_box.insert(END, "Protocols"+" :-\n"+protocols+"\n")
+                #self.display_properties_subequipment_box.insert(END, "Ports" + " :-\n" + port+"\n")
+                #self.display_properties_subequipment_box.insert(END, "Protocols"+" :-\n"+protocols+"\n")
 
             else:
                 new_equipment_property=self.current_vendor_instance.all_eqpmnt_subeqpmnt_and_parts_dictionary[new_subequipment_name]
-            # self.subpart_window_list.append(self)
-
-                for k, v in new_equipment_property.items():#.subequipment_properties_dictionary.items():
-                    print("Sub equipment property ", k, v)
+                # self.subpart_window_list.append(self)
+                subequipment.subequipment_properties_dictionary = new_equipment_property
+                #for k, v in new_equipment_property.items():#.subequipment_properties_dictionary.items():
+                #   print("Sub equipment property ", k, v)
                 port=new_equipment_property[ports]
                 protocols=new_equipment_property[protocol]
-                self.display_properties_subequipment_box.insert(END, "Ports"+ " :-\n"+port+"\n")
-                self.display_properties_subequipment_box.insert(END, "Protocols" + " :-\n" + protocols + "\n")
+                #self.current_node_instance.update_ports(port, subpart, subequipment, self.new_equipment)
+                #self.display_properties_subequipment_box.insert(END, "Ports"+ " :-\n"+port+"\n")
+                #self.display_properties_subequipmnt_box.insert(END, "Protocols" + " :-\n" + protocols + "\n")
 
-            self.remove_canvas_window_objects(self.subequipment_list_box, self.subequipment_label)
-            self.remove_canvas_window(canvas)  # ,node_instance)
+            #self.current_node_instance.update_ports(port,subpart,subequipment,self.new_equipment)
+            print("Subequipment ", new_subequipment_name, " ports are ::")
+            for item in port.split("\n"):
+                print(item)
+            for item in self.current_node_instance.port_list:
+                print(item.port_id)
+
+        self.remove_canvas_window_objects(self.subequipment_list_box, self.subequipment_label)
+        self.remove_canvas_window(canvas)  # ,node_instance)
 
             #for prop in new_subequipment.values():
             #    print(prop)
@@ -444,8 +491,8 @@ class Information_Frame():
         print("Vendor is ", self.current_vendor_name)
         self.equipment_options = self.ne.calling_equipment_names(self.current_vendor_name)
         for items in self.equipment_options:
-            print(items)
-            print("fbgVFgb")
+            #print(items)
+            #print("fbgVFgb")
             self.equipment_list_box.insert(END, items)
 
     '''

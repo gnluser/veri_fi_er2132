@@ -49,6 +49,22 @@ class Ip_Address():
             except:
                 self.create_ip_address()
 
+
+
+    def convert_str_to_ipv4(self,address):
+        f=""
+        for i in range(1,5):
+            m=0
+            for j in range(1,9):
+                r=int(address[i*8-j])
+                m+=int(pow(2,j-1)*r)
+            f+=str(m)
+            if i < 4:
+                f+="."
+        return f
+
+
+
     def create_ip_address(self):
         i = 0
         while (i < 100000):
@@ -57,8 +73,9 @@ class Ip_Address():
             address = ("1010" + b1).rjust(32, "0")
             if address not in ip_addresses_allotted:
                 ip_addresses_allotted.append(address)
-                self.ip_address = address
-                print("ip address created ", address)
+
+                self.ip_address =address
+                print("ip address created ",  self.convert_str_to_ipv4(address))
                 break
             i += 1
             # self.ip_address="".join(['0' for i in range(32)])

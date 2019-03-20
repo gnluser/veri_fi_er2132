@@ -18,7 +18,7 @@ except ImportError:
 
 
 
-data_file = "/home/gnl/Desktop/mankul/verifier/verifier/csv_files/Network Equipments (Updated) - Sheet1.csv"#network_equipments_2_Sheet1.csv"#equipments.csv"
+data_file = "/home/gnl/Desktop/mankul/verifier/verifier/csv_files/network_equipments_10_3_2019 - Sheet1.csv"#Network Equipments (Updated) - Sheet1.csv"#network_equipments_2_Sheet1.csv"#equipments.csv"
 current_deployed_topology_file = "current_topology.csv"  ### this file contain the current deployed topology
 #####3 dictionary is in format **** :" ", longitude=" ", latitude="  ",equipment_1=" ",equipment_2=" ", equipment_3=" "...##
 ### equipment subcategory is card type..
@@ -89,6 +89,10 @@ client_server_node_type = {"Server": {"color": "salmon", "radius": "10", "name":
 
 probe_node_type = {"Probe Node": {"color": "yellow", "length": "10", "breadth": "10", "name": "Prb", "distance": 0}}
 
+service_color="gold"
+button_color="yellow"
+label_color="cyan"
+entry_color="lightblue"
 try:
     node_type = {}
     node_type.update(network_node_type)
@@ -106,3 +110,5 @@ data_center_distance = 200
 access_rings_distance = 350
 inter_node_distance = 70
 Default="Default"
+
+service_options_list=["ECMP"]
