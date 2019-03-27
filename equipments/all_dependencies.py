@@ -82,10 +82,10 @@ data_center_node_type = {"Aggregation_DC_Node": {"color": "coral", "radius": "13
                          "Edge DC Node": {"color": "orangered", "radius": "13", "name": "Edg", "distance": 250}, \
                          "Core DC Node": {"color": "cyan", "radius": "14", "name": "CD", "distance": 200}}
 
-sdn_node_type = {"White Box": {"color": "white", "radius": "12", "name": "WB", "distance": 0}, \
+sdn_node_type = {"White Box": {"color": "grey", "radius": "12", "name": "WB", "distance": 0}, \
                  "Controller": {"color": "lightblue", "length": "50", "breadth": "20", "name": "Cntrlr", "distance": 0}}
-client_server_node_type = {"Server": {"color": "salmon", "radius": "10", "name": "S", "distance": 300}, \
-                           "Client_Node": {"color": "green", "radius": "10", "name": "Cl", "distance": 380}}
+client_server_node_type = {"Server": {"color": "salmon", "length": "15","breadth":"15", "name": "S", "distance": 300}, \
+                           "Client_Node": {"color": "green", "length": "12","breadth":"12", "name": "Cl", "distance": 380}}
 
 probe_node_type = {"Probe Node": {"color": "yellow", "length": "10", "breadth": "10", "name": "Prb", "distance": 0}}
 

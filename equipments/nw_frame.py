@@ -10,7 +10,7 @@ class Network_Frame():
         self.simulation = simulation
         self.master = master
         #self.information_frame = information_frame
-        self.canvas = Canvas(master, height=canvas_height, width=20, bg="azure")#""thistle1")
+        self.canvas = Canvas(master, height=canvas_height,  bg="azure")#""thistle1")width=20,
         self.canvas.pack(side=LEFT, expand=YES, fill=BOTH)
         self.frame = Frame(master, height=200, bg="orange")
         self.frame.pack(side=RIGHT)
@@ -37,27 +37,27 @@ class Network_Frame():
         self.node_dict_for_service={}
 
 
-    def allow_node_selection_for_service(self):
+    def allow_node_selection_for_service(self,service_nodes):
         self.service_counter=1
-        self.right_nodes_dict={}
-        self.left_nodes_dict={}
-        print("allowignbdn jbn ")
+        service_nodes.right_nodes_dict={}
+        service_nodes.left_nodes_dict={}
+        #print("allowignbdn jbn ")
 
 
 
-    def close_node_selection_for_service(self):
+    def close_node_selection_for_service(self,service_nodes):
         self.service_counter=0
         #for label,node in self.left_nodes_dict.items():
         #    self.canvas.itemconfig(label,fill=node.color)
         print("close node")
-        for label,node in self.right_nodes_dict.items():
+        for label,node in service_nodes.right_nodes_dict.items():
             self.canvas.itemconfig(label,fill=node.color)
 
 
-        for label,node in self.left_nodes_dict.items():
+        for label,node in service_nodes.left_nodes_dict.items():
             self.reset_node_on_canvas(label,node)
 
-        for label,node in self.right_nodes_dict.items():
+        for label,node in service_nodes.right_nodes_dict.items():
             self.reset_node_on_canvas(label,node)
 
 
@@ -360,15 +360,22 @@ class Network_Frame():
     #def connect_edge_to_respective_node(self,event,node_instance,window_label):
     def connect_edge_to_respective_node(self, widget, node_instance, window_label,box_entry_literal):
         #widget=event.widget
-
+        self.canvas.delete(window_label)
         #index=int(widget.curselection()[0])
         indices=widget.curselection()
         for index in indices:
+            print("code works here")
             connecting_to_node=widget.get(int(index))
             connecting_node_id=int(connecting_to_node[len(box_entry_literal):])
+            print("code works here")
+
             connecting_node_instance=self.topology.node_instance_dictionary_by_node_id[connecting_node_id]
-            self.canvas.delete(window_label)
+            #self.canvas.delete(window_label)
+            print("code works here")
+            print(connecting_node_instance)
+            print(node_instance)
             self.create_edge_between_two_nodes(node_instance,connecting_node_instance)
+            print("code works here")
 
 
     def create_edge_between_drop_and_positioned_nodes(self, new_node_instance):
@@ -384,12 +391,15 @@ class Network_Frame():
 
     def create_edge_between_two_nodes(self,new_node_instance,connecting_node_instance):
         print("new edge created between ", new_node_instance.node_id, " ", connecting_node_instance.node_id)
+
         coords1 = new_node_instance.canvas_coords
         coords2 = connecting_node_instance.canvas_coords
         edge_label=self.create_line(coords1,coords2)
+        print(edge_label)
         new_node_instance.connecting_node_instance_list.append(connecting_node_instance)
         connecting_node_instance.connecting_node_instance_list.append(new_node_instance)
-
+        self.topology.graph.add_edge(new_node_instance,connecting_node_instance)
+        ####nx.add_edge(self.topology.graph
         self.network_edge_labels[(new_node_instance, connecting_node_instance)] = edge_label
         new_node_instance.network_edge_labels_list.append(edge_label)
         connecting_node_instance.network_edge_labels_list.append(edge_label)
@@ -863,7 +873,7 @@ class Display_Node():
     def display_information_frame_text_box_for_node_information(self, current_node_instance):
         self.clear_all_information_frame_boxes()
         #self.information_frame.node_name_entry.delete(1.0, END)
-        #self.information_frame.node_id_entry.delete(1.0, END)
+        #self.information_frame.node_id_entry.delete(1.0, END)aa
         #self.information_frame.mac_address_entry.delete(1.0, END)
         #self.information_frame.ip_address_entry.delete(1.0, END)
         #self.information_frame.longitude_entry.delete(1.0, END)
@@ -1120,7 +1130,7 @@ class Node_Movements():
             return x2, y2, a1, b1
             # print("we reached")
 
-    def create_edge_between_two_nodes(self, current_node_instance, connecting_node_instance):
+    def create_edges_between_two_nodes(self, current_node_instance, connecting_node_instance):
 
         try:
             print(current_node_instance, connecting_node_instance)
@@ -1160,7 +1170,7 @@ class Node_Movements():
                 except:
                     print("dangling edge deleted")
             '''
-            self.create_edge_between_two_nodes(current_node_instance, connecting_node_instance)
+            self.create_edges_between_two_nodes(current_node_instance, connecting_node_instance)
 
     def node_tinkered(self, event, new_node_label, text, x, y):
         # print(event.widget)
