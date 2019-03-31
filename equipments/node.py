@@ -21,7 +21,11 @@ class Node():
         self.port_list=[]
         self.port_counter=0
         self.canvas_color=""
-
+        self.allocated_services=[]
+        self.processing_time=1
+        self.queing_time=0
+        self.port_links_list=[]
+        self.ip_lookup_table={}
 
     def update_ports(self,ports,subpart,subequipment,equipment):
     #def update_ports(self,**kwargs):
@@ -236,6 +240,15 @@ class Card(): # subequipment class created alias
         #port=Port()
         pass
 '''
+
+
+
+class Port_Link():
+    def __init__(self,ingress_port,egress_port):
+        self.ingress_port=ingress_port
+        self.egress_port=egress_port
+        self.port_capacity=min(ingress_port.port_capacity,egress_port.port_capacity)
+
 
 
 class Port():

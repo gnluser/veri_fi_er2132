@@ -3,11 +3,13 @@ from all_dependencies import *
 class Topology():
     def __init__(self):
         self.graph = nx.Graph()
+        self.port_graph=nx.Graph()
+        self.ip_address_graph = nx.Graph()
+
         self.network_node_instance_list = []
         self.node_numbers = 1
         self.node_instance_dictionary_by_node_id = {}
         self.port_graph = nx.Graph()
-        self.ip_address_graph = nx.Graph()
         self.port_numbers = 1
 
     def draw_Network(self):
@@ -16,6 +18,9 @@ class Topology():
     def find_shortest_path(self, node_instance_1, node_instance_2):
         shortest_path = nx.shortest_path(self.graph, node_instance_1, node_instance_2)
         return shortest_path
+
+    def find_all_shortest_paths(self,node_instance1,node_instance2):
+        shortest_paths=nx.all_shortest_paths(self.graph,node_instance1,node_instance2)
 
     def add_edge_to_topology(self, node_instance_1, node_instance_2):
         self.graph.add_edge(node_instance_1, node_instance_2)

@@ -111,4 +111,6 @@ access_rings_distance = 350
 inter_node_distance = 70
 Default="Default"
 
+number_of_packets=1000
+
 service_options_list=["ECMP"]

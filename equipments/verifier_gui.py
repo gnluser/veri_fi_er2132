@@ -3,6 +3,7 @@ from all_dependencies import *
 from info_frame import *
 from nw_frame import *
 from service_module import *
+from simulation import *
 
 #from equipments import *
 
@@ -11,89 +12,12 @@ from service_module import *
 
 ############################################################################
 ###############################################################################################
-###############################################################################################
+###############################################################################################556
+
 
 
 ##################################################################################################################
 ##################################################################################################################
-
-
-class Simulation():
-    def __init__(self):
-        self.environment = simpy.Environment()
-        self.link_delay = 10  # micro second
-        self.packet_id = 0
-        self.max_time = 1000
-
-    def create_ip_packets(self, number_of_packets):
-        packets = []
-        for i in range(number_of_packets):
-            packet = Packet("IP", 1500, self.packet_id)
-            packets.append(packet)
-            self.packet_id += 1
-        return packets
-
-    def create_simulation(self):
-        self.environment.process(self.simulation_of_packet())
-
-    def start_ip_traffic_between_two_nodes(self, information_frame, topology):
-        # self.information_frame
-        print("starting ip traffic")
-        node1 = topology.node_instance_dictionary_by_node_id[int(information_frame.node_A.get())]
-        node2 = topology.node_instance_dictionary_by_node_id[int(information_frame.node_B.get())]
-        packets = self.create_ip_packets(10)
-        shortest_path = topology.find_shortest_path(node1, node2)
-        information_frame.set_shortest_path_box_window(shortest_path)
-        self.environment.process(self.start_ip_simulation(shortest_path, packets))
-        self.max_time += self.environment.now
-        self.environment.run(until=self.max_time)
-        print("two nodes traffic completed suceessfully")
-
-    def start_all_nodes_ip_traffic(self, information_frame, topology):
-
-        node_instance_list = topology.node_instance_dictionary_by_node_id.values()
-        nodes_pair = zip(node_instance_list, node_instance_list)
-        for node1, node2 in nodes_pair:
-            if node1 != node2:
-                packets = self.create_ip_packets(10)
-                shortest_path = topology.find_shortest_path(node1, node2)
-                self.environment.process(self.start_ip_simulation(shortest_path, packets))
-        self.max_time += self.environment.now
-        self.environment.run(until=self.max_time)
-        print("all node traffic completed successfully")
-
-    def start_ip_simulation(self, shortest_path, packets):
-        for packet in packets:
-            print("packet ", str(packet.type), "\tpacket id ", str(packet.packet_id))
-            for node in shortest_path:
-                print("node ", node, "\t id ", str(node.node_id), str(self.environment.now))
-                yield self.environment.timeout(self.link_delay)
-
-    def simulation_of_packet(self):
-        pass
-
-
-class Packet():
-    def __init__(self, type, size, packet_id):
-        self.type = type
-        self.size = size
-        self.packet_id = packet_id
-
-
-##################################################################################################
-##################################################################################################
-
-
-
-
-class Flow_Table():
-    def __init__(self):
-        pass
-
-
-class Routing_Table():
-    def __init__(self):
-        self.routing_table_for_device = {}
 
 
 ###############################################################Equipment loading###########3
@@ -332,12 +256,13 @@ class Load_Network_Information():
 #######################################################################################
 
 class Network():
-    def __init__(self, topology, simulation):
+    def __init__(self, topology, simulation,services_and_operations):
         # self.topology=Three_Tier_Topology()
         self.node_list = ""
         self.topology = topology  # )
         self.simulation = simulation
         self.topology.draw_Network()
+        self.services_and_operations=services_and_operations
 
         # self.topology.create_network()
         # self.node_list=self.topology.nodes_list
@@ -351,7 +276,7 @@ class Network():
         self.information_frame = Information_Frame(self.network_frame.canvas, le, self.simulation, self.topology)
         self.network_frame.information_frame = self.information_frame
         self.information_frame.network_frame = self.network_frame
-        self.node_frame = Node_Frame(master, self.network_frame, self.simulation,self.topology)
+        self.node_frame = Node_Frame(master, self.network_frame, self.simulation,self.topology,self.services_and_operations)
         self.name_of_project()
 
         # self.information_frame.load_frame()
@@ -383,11 +308,12 @@ class Network():
 
 
 class Node_Frame():
-    def __init__(self, master, network_frame, simulation,topology):
+    def __init__(self, master, network_frame, simulation,topology,services_and_operations):
         self.simulation = simulation
         self.master = master
         self.network_frame = network_frame
         self.topology=topology
+        self.services_and_operations=services_and_operations
 
 
 
@@ -422,12 +348,22 @@ class Node_Frame():
 
     def start_service(self,listbox):
         indices = listbox.curselection()
-        nodes_pairs = [(x, y) for x in self.service_nodes.left_nodes_dict.values() for y in self.service_nodes.right_nodes_dict.values()]
+        nodes_pairs = [(x, y) for x in self.service_nodes.dictionary_left_nodes.values() for y in self.service_nodes.dictionary_right_nodes.values()]
         for nodepair in nodes_pairs:
-            self.service_nodes.nodes_pair[nodepair]=Node_Pair(nodepair)
+            node_pair = Node_Pair(nodepair)
+            self.service_nodes.nodes_pair[nodepair]=node_pair
+
         for index in indices:
             service_name=listbox.get(index)
-            Service(service_name,self.service_nodes,self.topology)
+            service=Service(service_name,self.service_nodes,self.topology,self.services_and_operations)
+            service.allocate_service(self.topology)
+
+        for nodepair in nodes_pairs:
+            node_pair=self.service_nodes.nodes_pair[nodepair]
+            self.services_and_operations.service_and_op_dictionary[node_pair] = node_pair.allocated_services
+
+
+
 
     def create_service_box(self):
         self.service_nodes=Service_Nodes()
@@ -441,21 +377,21 @@ class Node_Frame():
             self.service_list_box.insert(END,item)
         self.select_services_button=Button(self.service_frame,text="Start Services",bg=button_color)
         self.identify_service_compatibility_button=Button(self.service_frame,text="Identify Service Comaptibilty",bg=button_color)
-        #self.service_list_box.bind("<<ListboxSelect>>")
 
+        #self.service_list_box.bind("<<ListboxSelect>>")
 
     def selecting_right_nodes_for_service(self):
         print("second button pressed and nodes are ")
-        self.service_nodes.right_nodes_dict=self.network_frame.node_dict_for_service
+        self.service_nodes.dictionary_right_nodes=self.network_frame.node_dict_for_service
         self.service_nodes.node_dict_for_service={}
-        print(self.service_nodes.right_nodes_dict)
+        print("set 2 nodes are ",self.service_nodes.dictionary_right_nodes)
         #self.rollback_nodes_canvas_attributes()
 
     def selecting_left_nodes_for_service(self):
         print("ist node button pressed and nodes selected are ")
-        self.service_nodes.left_nodes_dict=self.network_frame.node_dict_for_service
+        self.service_nodes.dictionary_left_nodes=self.network_frame.node_dict_for_service
         self.network_frame.node_dict_for_service={}
-        print(self.service_nodes.left_nodes_dict)
+        print("set 1 is ", self.service_nodes.dictionary_left_nodes)
 
     def rollback_nodes_canvas_attributes(self):
         self.network_frame.close_node_selection_for_service(self.service_nodes)
@@ -509,7 +445,7 @@ class Node_Frame():
         nodemenubar.add_command(label="Hide Information",command=self.network_frame.information_frame.hide_info_frame)
         nodemenubar.add_command(label="Service",command=self.add_service_frame)
         nodemenubar.add_command(label="Service Frame Hide",command=self.delete_service_frame)
-
+        nodemenubar.add_command(label="Start random traffic",command=self.simulation.resume_traffic(self.topology,self.services_and_operations))
         self.master.config(menu=nodemenubar)
 
 
@@ -517,7 +453,8 @@ le = Load_Network_Information()
 simulation = Simulation()
 # simulation.start_ip_simulation()
 print("network graph ", le.topology.graph)
-network = Network(le.topology, simulation)
+services_and_operations=Services_and_Operations()
+network = Network(le.topology, simulation,services_and_operations)
 master = Tk()
 master.title("Verifier")
 master.minsize(500, 500)

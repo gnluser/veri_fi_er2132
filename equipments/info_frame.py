@@ -205,7 +205,8 @@ class Information_Frame():
         #self.vendor_yscrollbar.pack(side=RIGHT,fill=Y)
         #self.vendor_xscrollbar.config(command=self.vendor_list_box.xview)
         #self.vendor_yscrollbar.config(command=self.vendor_list_box.yview)
-        self.vendor_list_box.bind('<<Select>>',
+        print("vendor names are present")
+        self.vendor_list_box.bind('<<ListboxSelect>>',
                                   lambda event: self.equipment_load(event, canvas, event.x, event.y, node_instance))
 
     def create_equipment_list_box(self, canvas, x, y, node_instance):  # ,node_label):

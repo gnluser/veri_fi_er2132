@@ -281,17 +281,30 @@ class Network_Frame():
 
 
     def show_ports_options_between_node1_node2(self,x1,y2,listbox,node_instance,box_entry_literal):
+
+        self.current_ports_label_instance_dictionary={}
+        self.connecting_ports_label_instance_dictionary={}
+        self.label_index_ordered_pair_dictionary={}
+        height = width = 100
+
         indices=listbox.curselection()
         print("indices are ",indices)
         port_option_frame = Frame(self.canvas,background="orange")
-        frame_1 = Frame(port_option_frame, background="red", bd=2)
-        frame_2 = Frame(port_option_frame, background="red", bd=2)
+        frame_1 = Frame(port_option_frame, background="gold", bd=2)
+        frame_2 = Frame(port_option_frame, background="silver", bd=2)
+
+        self.connecting_node_port_list_box = Listbox(frame_1,exportselection=0)
+        self.current_node_list_box=Listbox(frame_2,exportselection=0)
+        label = Label(frame_2, text="Current Node", bg="gold")
+        label.pack(side="top")
+        connected_label=Label(frame_1,text="Connected Nodes",bg="silver")
+        connected_label.pack(side="top")
+
         connecting_node_instances=[]
         rowspan=0
-        left_labels_list = []
-        #left_listbox_list=[]
-        left_listbox=Listbox(frame_1)
+
         print(indices)
+        '''
         for index in indices:
             print(listbox.get(index))
             node_2=listbox.get(index)
@@ -299,53 +312,149 @@ class Network_Frame():
             node_2_id=int(node_2[len(box_entry_literal):])
             connecting_node_instance=self.topology.node_instance_dictionary_by_node_id[node_2_id]
             connecting_node_instances.append(connecting_node_instance)
-            #node_label=Label(frame_1,text="Node "+node_2,bg="gold")
-            #left_listbox.insert(END,node_2)
-            #node_label.pack(side="left")
-            #node_label.grid(row=rowspan,column=0)
-            #node_label.pack(side="top")
-            #listbox=Listbox(frame_1)
+
             for port in connecting_node_instance.port_list:
                 print("port is ",str(port.port_id))
-                label=Label(frame_1,text=str(port.port_id),bg="yellow")
-                left_labels_list.append(label)
-                left_listbox.insert(END,node_2+" :- "+str(port.port_id))
-                #label.pack(side="left")
-                #label.grid(row=rowspan,column=0,sticky=N+E+W+S)
-                #label.pack(side="top")
+                connecting_node_port_list_box.insert()
+                current_node_list_box.insert(END,"port "+str(port.port_id))
+
                 rowspan+=1
-            #left_listbox_list.append(listbox)
-            left_listbox.pack(side="top")
+
+            current_node_list_box.pack(side="top")
             rowspan+=1
         right_labels_list=[]
+        '''
+        pre_node_string= "node "
+        post_node_string=": port "
         for connected_node in node_instance.connecting_node_instance_list:
+            connected_node_label=pre_node_string+str(connected_node.node_id)
             for port in connected_node.port_list:
                 print("port is ",str(port.port_id))
-                label = Label(frame_1, text=str(port.port_id),bg="yellow")
-                left_labels_list.append(label)
-                # label.pack(side="left")
-                #label.grid(row=rowspan, column=0,sticky=N+E+W+S)
-                label.pack(side="top")
+                label=connected_node_label+post_node_string+str(port.port_id)
+                self.connecting_node_port_list_box.insert(END,label)
+                self.connecting_ports_label_instance_dictionary[label]=port
+
                 rowspan += 1
+        self.connecting_node_port_list_box.pack(side="top")
         rowspan=0
-        right_list_box=Listbox(frame_2)
-        label=Label(frame_2,text="Current Node",bg="gold")
-        #label.grid(row=rowspan,column=1,sticky=N+E+W+S)
-        label.pack(side="top")
+        #right_list_box=Listbox(frame_2)
+
         for port in node_instance.port_list:
             print(port)
-            label=Label(frame_2,text=str(port.port_id),bg="cyan")
-            right_labels_list.append(label)
-            right_list_box.insert(END,str(port.port_id))
-            #label.pack(side="left")
-            #label.grid(row=rowspan,column=1,sticky=N+E+W+S)
-            #label.pack(side="top")
+            #label=Label(frame_2,text=str(port.port_id),bg="cyan")
+            #current_node_list_box.append(label)
+            label="port "+str(port.port_id)
+            self.current_node_list_box.insert(END,label)
+            self.current_ports_label_instance_dictionary[label]=port
             rowspan+=1
-        right_list_box.pack(side="top")
-        frame_1.pack(side="left")
-        frame_2.pack(side="right")
+        self.current_node_list_box.pack(side="top")
+        #right_list_box.pack(side="top")
+        frame_3=Frame(port_option_frame,background="yellow",bd=2)
+        label=Label(frame_3,text="Ports Connections")
+        self.port_selection_box=Listbox(frame_3,selectmode=MULTIPLE)
+        connect_button=Button(frame_3,text="Connect")
+        remove_button=Button(frame_3,text="Remove Entry")
+        label.place(x=0,y=0,width=3*width-4,height=10)#pack()
+        self.port_selection_box.place(x=0,y=11,width=3*width-4,height=160)#pack()#side="top")
+        connect_button.place(x=0,y=175,width=int(1.5*width)-2,height=20)#ack()#side="top")
+        remove_button.place(x=int(1.5*width),y=175,width=int(1.5*width)-2,height=20)#ack()#side="top")
+        self.current_port_flag=0
+        self.connected_port_flag=0
+        self.current_node_list_box.bind("<<ListboxSelect>>",lambda event: self.matching_current_port_to_connected_port(event,self.connecting_node_port_list_box))
+        self.connecting_node_port_list_box.bind("<<ListboxSelect>>",lambda event: self.matching_connecting_port_to_current_port(event,self.current_node_list_box))
 
-        self.port_option_window=self.canvas.create_window(x1+100,y2+100,window=port_option_frame,width=200,height=200)
+        #self.port_selection_box.bind("<<ListboxSelect",self.add_back_ports_to_listboxes)
+        remove_button.configure(command=lambda : self.add_back_ports_to_listboxes())
+        connect_button.configure(command=lambda: self.create_port_links(node_instance,pre_node_string,post_node_string))
+
+        frame_1.place(x=0,y=0, anchor="nw", width=int(1.5 * width), height=height)
+        frame_2.place(x=int(1.5 * width),y=0, anchor="nw", width=int(1.5 * width), height=height)
+        frame_3.place(x=0,y=height+1, anchor="nw",width=3 * width,height=2 * height)
+
+        self.port_option_window=self.canvas.create_window(x1+100,y2+150,window=port_option_frame,width=3 * width,height=3*height)
+
+    def create_port_links(self,node_instance,pre_node_string,post_node_string):
+        indices=self.port_selection_box.curselection()
+        node_id_start_place=len(pre_node_string)
+        for index in indices:
+            label=self.port_selection_box.get(index)
+            label_set=self.label_index_ordered_pair_dictionary[label]
+            current_port_label=label_set[0]
+            connected_port_label=label_set[1]
+            current_port=self.current_ports_label_instance_dictionary[current_port_label]
+            connected_port=self.connecting_ports_label_instance_dictionary[connected_port_label]
+
+            matching_post_id_label_place=connected_port_label.find(post_node_string)
+            connected_port_id=connected_port_label[node_id_start_place:matching_post_id_label_place]
+            connected_port_id=int(connected_port_id)
+            connected_node_instance=self.topology.node_instance_dictionary_by_node_id[connected_port_id]
+
+            self.add_ports_to_topology_graph(current_port,connected_port)
+            port_link=Port_Link(current_port,connected_port)
+            node_instance.port_links_list.append(port_link)
+            print("ports links created")
+            self.remove_port_from_node_list(current_port,node_instance)
+            self.remove_port_from_node_list(connected_port,connected_node_instance)
+        self.canvas.delete(self.port_option_window)
+        self.canvas.delete(self.window_for_edge_options)
+        #self.clear_all_boxes_on_canvas()
+
+
+    def remove_port_from_node_list(self,port,node_instance):
+        node_instance.port_list.remove(port)
+
+    def add_ports_to_topology_graph(self,port1,port2):
+        self.topology.port_graph.add_edge(port1,port2)
+
+    def add_back_ports_to_listboxes(self):
+        print("remove button clicked")
+        indices=self.port_selection_box.curselection()
+        for index in indices:
+            print(index)
+            label=self.port_selection_box.get(index)
+            label_set=self.label_index_ordered_pair_dictionary[label]
+            current_port_label=label_set[0]
+            connected_port_label=label_set[1]
+            self.current_node_list_box.insert(END,current_port_label)
+            self.connecting_node_port_list_box.insert(END,connected_port_label)
+            self.port_selection_box.delete(index)
+
+    def matching_current_port_to_connected_port(self,event,connecting_node_part_list_box):
+        current_listbox=event.widget
+        current_index=current_listbox.curselection()[0]
+        current_port=current_listbox.get(current_index)
+        self.current_port_flag=1
+        if self.connected_port_flag == 1:
+        #if connecting_node_part_list_box.curselection() != "":
+            connected_index = connecting_node_part_list_box.curselection()
+            self.insert_port_entries(current_listbox,current_index,connecting_node_part_list_box,connected_index)
+            current_listbox.delete(current_index)
+            connecting_node_part_list_box.delete(connected_index)
+            self.current_port_flag=self.connected_port_flag=0
+
+
+
+
+    def insert_port_entries(self,current_listbox,current_index,connected_listbox,connected_index):
+        label_1=current_listbox.get(current_index)
+        label_2=connected_listbox.get(connected_index)
+        label=label_1+" -- "+label_2
+        self.label_index_ordered_pair_dictionary[label]=(label_1,label_2)
+        self.port_selection_box.insert(END,label)
+
+    def matching_connecting_port_to_current_port(self,event,current_node_list_box):
+        connected_listbox=event.widget
+        connected_index=connected_listbox.curselection()[0]
+        connected_port=connected_listbox.get(connected_index)
+        self.connected_port_flag=1
+        if self.current_port_flag == 1:
+            current_index = current_node_list_box.curselection()
+            self.insert_port_entries(current_node_list_box,current_index,connected_listbox,connected_index)
+            connected_listbox.delete(connected_index)
+            current_node_list_box.delete(current_index)
+            self.current_port_flag=self.connected_port_flag=0
+
+
 
 
     def select_ports_for_port_connection(self):
