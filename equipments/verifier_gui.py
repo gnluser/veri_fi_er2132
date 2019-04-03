@@ -270,8 +270,14 @@ class Network():
         # print(self.edge_list)
         # self.start_project()
 
+    def set_tkinter_frame(self,master):
+        screen_width = master.winfo_screenwidth()
+        screen_height = master.winfo_screenheight()
+        master.geometry(str(screen_width)+"x"+str(screen_height))
+
     def start_project(self, master, le):
         # master=Tk()
+        self.set_tkinter_frame(master)
         self.network_frame = Network_Frame(master, self.topology, self.simulation)
         self.information_frame = Information_Frame(self.network_frame.canvas, le, self.simulation, self.topology)
         self.network_frame.information_frame = self.information_frame
@@ -423,6 +429,8 @@ class Node_Frame():
         #self.onboarding_portal_button.pack(side="top")
         pass
 
+
+    '''
     def create_window_pane_for_network_node_labels(self):
         # network_nodes_button=Button(self.canvas,"Network Nodes")
         nodemenubar = Menu(self.master)
@@ -447,6 +455,102 @@ class Node_Frame():
         nodemenubar.add_command(label="Service Frame Hide",command=self.delete_service_frame)
         nodemenubar.add_command(label="Start random traffic",command=self.simulation.resume_traffic(self.topology,self.services_and_operations))
         self.master.config(menu=nodemenubar)
+    '''
+
+
+    def create_window_pane_for_network_node_labels(self):
+        # network_nodes_button=Button(self.canvas,"Network Nodes")
+
+
+
+        active_background_color="lightblue"
+        active_fore_ground_color="black"
+        background="lightyellow"
+
+        submenu_active_background_color="lightblue"
+        submenu_active_fore_ground_color="black"
+        submenu_background="lightyellow"
+
+        menu_bar=Menu(self.master,activebackground=active_background_color,activeforeground=active_fore_ground_color,bg=background)
+
+        node_menu_bar = Menu(menu_bar,activebackground=active_background_color,activeforeground=active_fore_ground_color,bg=background)
+
+        nw_node_menu_bar=Menu(node_menu_bar,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+
+        sdn_nodes_menu_bar=Menu(node_menu_bar,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        probe_node_menu_bar=Menu(node_menu_bar,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        dc_node_menu_bar=Menu(node_menu_bar,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        client_server_menu_bar=Menu(node_menu_bar,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        general_node_menu_bar=Menu(node_menu_bar,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        #menubar.add_cascade(label=nodemenubar)
+
+        nw_node_menu_bar.add_command(label="Network Nodes",   command=self.network_frame.create_window_pane_for_generic_network_node_labels)
+        sdn_nodes_menu_bar.add_command(label="SDN Nodes",   command=self.network_frame.create_window_pane_for_sdn_network_node_labels)
+
+
+        probe_node_menu_bar.add_command(label="Probe Nodes",    command=self.network_frame.create_window_pane_for_probe_network_node_labels)
+
+        dc_node_menu_bar.add_command(label="Data Center Nodes",      command=self.network_frame.create_window_pane_for_data_center_node_labels)
+        client_server_menu_bar.add_command(label="Client Server Nodes",  command=self.network_frame.create_window_pane_for_client_server_node_labels)
+        general_node_menu_bar.add_command(label="General Nodes",  command=self.network_frame.create_window_pane_for_general_nodes_label)
+
+
+
+        node_menu_bar.add_cascade(label="Network Nodes",menu=nw_node_menu_bar)
+        node_menu_bar.add_cascade(label="SDN Nodes",menu=sdn_nodes_menu_bar)
+        node_menu_bar.add_cascade(label="Probe Nodes",menu=probe_node_menu_bar)
+        node_menu_bar.add_cascade(label="DC Nodes",menu=dc_node_menu_bar)
+        node_menu_bar.add_cascade(label="Client/Server Nodes",menu=client_server_menu_bar)
+        node_menu_bar.add_cascade(label="General Nodes",menu=general_node_menu_bar)
+
+
+        onboarding_portal=Menu(menu_bar,activebackground=active_background_color,activeforeground=active_fore_ground_color,bg=background)
+        loading_portal=Menu(onboarding_portal,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        exit_boarding_portal=Menu(onboarding_portal,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+
+        onboarding_portal.add_cascade(label="Onboarding portal",menu=loading_portal)
+        onboarding_portal.add_cascade(label="Exit portal",menu=exit_boarding_portal)
+        loading_portal.add_command(label="Onboarding Portal",command=self.add_onboarding)
+        exit_boarding_portal.add_command(label="Hide Onboarding Portal", command=self.remove_onboarding)
+
+        nodes_information=Menu(menu_bar,activebackground=active_background_color,activeforeground=active_fore_ground_color,bg=background)
+        show_information=Menu(nodes_information,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        hide_information=Menu(nodes_information,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        show_information.add_command(label="Show Information",   command=self.network_frame.information_frame.create_info_frame)
+        hide_information.add_command(label="Hide Information",command=self.network_frame.information_frame.hide_info_frame)
+        nodes_information.add_cascade(label="Show Info",menu=show_information)
+        nodes_information.add_cascade(label="Hide",menu=hide_information)
+
+        service=Menu(menu_bar,activebackground=active_background_color,activeforeground=active_fore_ground_color,bg=background)
+        show_service=Menu(service,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        hide_service=Menu(service,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        service.add_cascade(label="Service",menu=show_service)
+        service.add_cascade(label="Hide",menu=hide_service)
+
+        show_service.add_command(label="Service",command=self.add_service_frame)
+        hide_service.add_command(label="Service Frame Hide",command=self.delete_service_frame)
+
+        random_traffic_menu_bar=Menu(menu_bar,activebackground=active_background_color,activeforeground=active_fore_ground_color,bg=background)
+        start_random_traffic=Menu(random_traffic_menu_bar,activebackground=submenu_active_background_color,activeforeground=submenu_active_fore_ground_color,bg=submenu_background)
+        start_random_traffic.add_command(label="Start random traffic",command=self.simulation.resume_traffic(self.topology,self.services_and_operations))
+        random_traffic_menu_bar.add_cascade(label="Start Random Traffic",menu=start_random_traffic)
+
+
+        menu_bar.add_cascade(label="Nodes",menu=node_menu_bar)
+        menu_bar.add_cascade(label="Onboard Portal",menu=onboarding_portal)
+        menu_bar.add_cascade(label="Node Info",menu=nodes_information)
+        menu_bar.add_cascade(label="Service",menu=service)
+        menu_bar.add_cascade(label="Traffic",menu=random_traffic_menu_bar)
+
+        '''
+        nodemenubar
+        nodemenubar
+        nodemenubar
+        nodemenubar.
+        nodemenubar.
+        nodemenubar
+        '''
+        self.master.config(menu=menu_bar)
 
 
 le = Load_Network_Information()

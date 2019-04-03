@@ -70,24 +70,24 @@ general_node_type = {"Switch": {"color": "steelblue1", "radius": "12", "name": "
                      "Router": {"color": "steelblue2", "radius": "13", "name": "R", "distance": 0}, \
                      "Gateway": {"color": "skyblue1", "radius": "14", "name": "G", "distance": 0}, \
                      "Firewall": {"color": "skyblue2", "radius": "14", "name": "F", "distance": 0}, \
-                     "DataCenter_InterConnect": {"color": "skyblue3", "radius": "14", "name": "Dci", "distance": 0}}
+                     "DCI": {"color": "skyblue3", "radius": "14", "name": "Dci", "distance": 0}}
 network_node_type = {
-    "Provider Node": {"color": "pink", "radius": "14", "name": "P", "distance": 170}, \
-    "Core Node": {"color": "blue", "radius": "14", "name": "CN", "distance": 0}, \
-    "Metro Node": {"color": "brown", "radius": "13", "name": "M", "distance": 100}, \
-    "Access Node": {"color": "orange", "radius": "12", "name": "Acc", "distance": 350}, \
-    "Aggregation_Node": {"color": "lightgreen", "radius": "12", "name": "Ag", "distance": 0}}
+    "Provider": {"color": "pink", "radius": "14", "name": "P", "distance": 170}, \
+    "Core": {"color": "blue", "radius": "14", "name": "CN", "distance": 0}, \
+    "Metro": {"color": "brown", "radius": "13", "name": "M", "distance": 100}, \
+    "Access": {"color": "orange", "radius": "12", "name": "Acc", "distance": 350}, \
+    "Aggregation": {"color": "lightgreen", "radius": "12", "name": "Ag", "distance": 0}}
 
-data_center_node_type = {"Aggregation_DC_Node": {"color": "coral", "radius": "13", "name": "Agdc", "distance": 290, }, \
-                         "Edge DC Node": {"color": "orangered", "radius": "13", "name": "Edg", "distance": 250}, \
-                         "Core DC Node": {"color": "cyan", "radius": "14", "name": "CD", "distance": 200}}
+data_center_node_type = {"Aggregation": {"color": "coral", "radius": "13", "name": "Agdc", "distance": 290, }, \
+                         "Edge": {"color": "orangered", "radius": "13", "name": "Edg", "distance": 250}, \
+                         "Core": {"color": "cyan", "radius": "14", "name": "CD", "distance": 200}}
 
 sdn_node_type = {"White Box": {"color": "grey", "radius": "12", "name": "WB", "distance": 0}, \
                  "Controller": {"color": "lightblue", "length": "50", "breadth": "20", "name": "Cntrlr", "distance": 0}}
 client_server_node_type = {"Server": {"color": "salmon", "length": "15","breadth":"15", "name": "S", "distance": 300}, \
-                           "Client_Node": {"color": "green", "length": "12","breadth":"12", "name": "Cl", "distance": 380}}
+                           "Client": {"color": "green", "length": "12","breadth":"12", "name": "Cl", "distance": 380}}
 
-probe_node_type = {"Probe Node": {"color": "yellow", "length": "10", "breadth": "10", "name": "Prb", "distance": 0}}
+probe_node_type = {"Probe": {"color": "yellow", "length": "10", "breadth": "10", "name": "Prb", "distance": 0}}
 
 service_color="gold"
 button_color="yellow"
@@ -114,3 +114,10 @@ Default="Default"
 number_of_packets=1000
 
 service_options_list=["ECMP"]
+
+canvas_color="azure"
+outer_frame_color="red"
+
+node_option_frame_color="lemon chiffon"#"lightyellow"
+background_canvas_color = node_option_frame_color  # label_color
+background_label_color = "gainsboro"#"whitesmoke"
