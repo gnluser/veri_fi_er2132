@@ -688,27 +688,27 @@ class Network_Frame():
 
     def create_window_pane_for_data_center_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_option_image(data_center_node_type)
+        self.create_node_option_image(data_center_node_type,100,100)
 
     def create_window_pane_for_client_server_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_option_image(client_server_node_type)
+        self.create_node_option_image(client_server_node_type,100,100)
 
     def create_window_pane_for_general_nodes_label(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_option_image(general_node_type)
+        self.create_node_option_image(general_node_type,100,100)
 
     def create_window_pane_for_sdn_network_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_option_image(sdn_node_type)
+        self.create_node_option_image(sdn_node_type,100,100)
 
     def create_window_pane_for_probe_network_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_option_image(probe_node_type)
+        self.create_node_option_image(probe_node_type,100,100)
 
     def create_window_pane_for_generic_network_node_labels(self):
         self.delete_labels_generated_for_menu_node_type_selection()
-        self.create_node_option_image(network_node_type)
+        self.create_node_option_image(network_node_type,100,100)
 
         # self.label_entry = Label(self.canvas, text=node_property)
         # window1 = self.canvas.create_window(100, canvas_height - 500, window=self.label_entry, height=200, width=200)
@@ -722,11 +722,13 @@ class Network_Frame():
             #self.node_option_frame.delete(items)
             items.destroy()
 
-    def create_node_option_image(self, node_type_dictionary):
+    def create_node_option_image(self, node_type_dictionary,x,y):
 
         self.clear_background_canvas_and_frame()
         node_label_color=background_canvas_color#"lightyellow"#SandyBrown"
 
+        window_x = x
+        window_y = y
 
         #self.node_option_frame=Frame(self.canvas,background=node_option_frame_color,bd=2,pady=1,bg="lightgrey")
         pos_x = 0
@@ -736,8 +738,7 @@ class Network_Frame():
         width=300
         height=20
         print("creating the drag and drop part")
-        window_x = 100
-        window_y = 100
+
         window_width=int(width/2)-4
         window_height=window_width
         displacement_x = window_width
@@ -772,9 +773,11 @@ class Network_Frame():
                 label = Label(self.node_option_frame, text=node, bg=node_label_color)
 
                 #self.node_option_window_label = self.canvas.create_window(x, y, window=label, height=width, width=200)
-                coords = x,y,x+oval_gap-3,y+oval_gap-3#pos_x + displacement_x, pos_y, pos_x + displacement_x + oval_gap, pos_y+oval_gap
+                coords= x,y+2,x,y+2+oval_gap-5,x+oval_gap-5,y+2+oval_gap-5,x+2+oval_gap-5,y+oval_gap-5,x+2+oval_gap-5,y,x+2,y
+                #coords = x,y,x+oval_gap-3,y+oval_gap-3#pos_x + displacement_x, pos_y, pos_x + displacement_x + oval_gap, pos_y+oval_gap
                 #node_label = self.canvas.create_oval(coords, fill=attributes["color"])
-                node_label = self.background_strip_canvas.create_oval(coords, fill=attributes["color"])
+                #node_label = self.background_strip_canvas.create_oval(coords, fill=attributes["color"])
+                node_label = self.background_strip_canvas.create_polygon(coords, fill=attributes["color"])
                 print(node_label,"#")
             except:
                 length = int(attributes["length"])
@@ -809,7 +812,20 @@ class Network_Frame():
             y+= label_gap
 
         self.labels_generated_after_menu_node_type_selection.append(self.node_option_window_label)
+        #self.ba.tag_bind(self.node_option_window_label,"<<Button-1>>",self.move_node_option_frame)
+        #self.node_option_frame.bind(main_label,"<<Button-1>>",lambda event:self.move_node_frame(event,node_type_dictionary,self.canvas,self.node_option_window_label))
+        main_label.bind("<ButtonRelease-1>",lambda event:self.move_node_frame(event,node_type_dictionary,self.canvas,self.node_option_window_label))
+        exit_button.configure(command=lambda :self.destroy_window(self.canvas,self.node_option_window_label))
 
+    def destroy_window(self,canvas,window_label):
+        canvas.delete(window_label)
+        print("window deleted")
+
+    def move_node_frame(self,event,node_type_dictionary,canvas,window_label):
+        print("frame moved")
+        canvas.delete(window_label)
+        x,y=event.x,event.y
+        self.create_node_option_image(node_type_dictionary,x,y)
 
     def sub_canvas_node_clicked(self,event):
         self.current_attributes = ""
