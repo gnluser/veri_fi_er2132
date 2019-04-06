@@ -20,6 +20,11 @@ class Information_Frame():
         self.frame = Frame(self.canvas, padx=2, pady=2)  # , bg="grey")
         self.create_info_frame_widgets()
 
+        self.frame_width=200
+        self.frame_height=300
+
+        self.window_frame = Frame(canvas,highlightbackground="white",  highlightthickness=2, width=self.frame_width, height=self.frame_height, bd= 5)
+
         #self.create_info_frame()
         #self.create_info_frame_widgets()
 
@@ -172,8 +177,8 @@ class Information_Frame():
         #                                                                   window2))
 
     def create_canvas_window(self, x, y, canvas, node_instance):  # ,node_id,list_box):
-        self.window_frame = Frame(canvas)
-        self.window_box_id = canvas.create_window(x - 200, y + 50, window=self.window_frame, width=200, height=300)
+
+        self.window_box_id = canvas.create_window(x - 200, y + 50, window=self.window_frame, width=self.frame_width, height=self.frame_height)
 
     def remove_canvas_window_objects(self, list_box, label):
         list_box.destroy()
@@ -182,7 +187,8 @@ class Information_Frame():
     def remove_canvas_window(self, canvas):  # ,node_instance):#,list_box):
         # self.remove_list_box(list_box)
         canvas.delete(self.window_box_id)
-        self.window_frame.destroy()
+        #self.window_frame.destroy()
+        pass
 
     def reset_subequipment_property_box(self):
         self.display_properties_subequipment_box.delete(1.0, END)
@@ -195,12 +201,16 @@ class Information_Frame():
         self.create_canvas_window(event.x, event.y, canvas, node_instance)  # ,node_label,self.vendor_list_box)
         #self.vendor_yscrollbar = Scrollbar(self.window_frame, orient=VERTICAL)
         #self.vendor_xscrollbar = Scrollbar(self.window_frame, orient=HORIZONTAL)
+        self.exit_button=Button(self.window_frame,text="x")
         self.vendor_label = Label(self.window_frame, text="Vendor List")
-        self.vendor_list_box = Listbox(self.window_frame, bd=5, cursor="hand2",exportselection=0, width=20, height=50, bg="skyblue1")
+        self.vendor_list_box = Listbox(self.window_frame, bd=5, cursor="hand2",exportselection=0, bg=window_background_color)#, width=20, height=50
         #self.vendor_list_box.config(xscrollcommand=self.vendor_xscrollbar.set,yscrollcommand=self.vendor_yscrollbar.set)
-        self.vendor_label.pack(side=TOP)
-        self.vendor_list_box.pack(side=TOP)
 
+        self.exit_button.place(x=0.85*self.frame_width,y=0,width=0.1 * self.frame_width,height=0.1 * self.frame_height)
+
+        self.vendor_label.place(x=0.1*self.frame_width,y=0,width=0.7*self.frame_width,height=0.1 * self.frame_height)#pack(side=TOP)
+        #self.vendor_list_box.
+        self.vendor_list_box.place(x=0.01*self.frame_width,y=30,width=0.88*self.frame_width,height=0.8*self.frame_height)
         #self.vendor_xscrollbar.pack(side=BOTTOM, fill=X)
         #self.vendor_yscrollbar.pack(side=RIGHT,fill=Y)
         #self.vendor_xscrollbar.config(command=self.vendor_list_box.xview)
@@ -218,15 +228,21 @@ class Information_Frame():
         #yscrollbar = Scrollbar(self.window_frame, orient=VERTICAL)
         #xscrollbar = Scrollbar(self.window_frame, orient=HORIZONTAL)
         self.equipment_list_box = Listbox(self.window_frame, bd=5,cursor="hand2" ,exportselection=0, width=20, height=50,
-                                          bg="skyblue3")
+                                          bg=window_background_color)
         #self.equipment_list_box.config(xscrollcommand=xscrollbar.set,yscrollcommand=yscrollbar.set)
 
-        self.equipment_label.pack(side=TOP)
+        self.equipment_label.place(x=0.1*self.frame_width,y=0,width=0.7*self.frame_width,height=0.1 * self.frame_height)#pack(side=TOP)#.pack(side=TOP)
         #xscrollbar.pack(side=BOTTOM, fill=X)
         #yscrollbar.pack(side=RIGHT,fill=Y)
         #xscrollbar.config(command=self.equipment_list_box.xview)
         #yscrollbar.config(command=self.equipment_list_box.yview)
-        self.equipment_list_box.pack()
+
+        #self.exit_button.place(x=0.85*self.frame_width,y=0,width=0.1 * self.frame_width,height=0.1 * self.frame_height)
+
+        #self.vendor_label.place(x=0.1*self.frame_width,y=0,width=0.7*self.frame_width,height=0.1 * self.frame_height)#pack(side=TOP)
+        #self.vendor_list_box.
+        #self.vendor_list_box.place(x=0.01*self.frame_width,y=30,width=0.88*self.frame_width,height=0.8*self.frame_height)
+        self.equipment_list_box.place(x=0.01*self.frame_width,y=30,width=0.88*self.frame_width,height=0.8*self.frame_height)#.pack()
         #self.equipment_list_box.pack()
         self.equipment_list_box.bind("<<ListboxSelect>>",
                                      lambda event: self.equipment_property_load(event, canvas, x, y, node_instance))
@@ -239,11 +255,12 @@ class Information_Frame():
         #xscrollbar = Scrollbar(self.window_frame, orient=HORIZONTAL)
         # self.create_canvas_window(x,y,canvas)#,node_label,self.subequipment_list_box)
         self.subequipment_list_box = Listbox(self.window_frame, cursor="hand2",selectmode=MULTIPLE, bd=5, exportselection=0, width=20,
-                                             height=15, bg="deepskyblue")
+                                             height=15, bg=window_background_color)
         #self.subequipment_list_box.config(xscrollcommand=xscrollbar.set,yscrollcommand=yscrollbar.set)
         self.subequipment_label = Label(self.window_frame, text="Subequipments")
-        self.subequipment_label.pack()
-        self.subequipment_list_box.pack()
+
+        self.subequipment_label.place(x=0.1*self.frame_width,y=0,width=0.7*self.frame_width,height=0.1 * self.frame_height)#pack(side=TOP)#.pack()
+        self.subequipment_list_box.place(x=0.01*self.frame_width,y=30,width=0.88*self.frame_width,height=0.8*self.frame_height)#.pack()
 
         self.subequipment_select_button=Button(self.window_frame,text="Click",command= lambda: self.load_subeqpmnt_property_window_box(canvas,equipment_name))#,node_instance))
 

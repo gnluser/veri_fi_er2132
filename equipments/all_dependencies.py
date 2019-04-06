@@ -121,3 +121,7 @@ outer_frame_color="red"
 node_option_frame_color="lemon chiffon"#"lightyellow"
 background_canvas_color = node_option_frame_color  # label_color
 background_label_color = "gainsboro"#"whitesmoke"
+
+window_background_color="white"
+
+
